@@ -1,0 +1,19 @@
+{application, bender, [
+    {description, "Bender service"},
+    {vsn, "1.0.0"},
+    {registered, []},
+    {applications, [
+        kernel,
+        stdlib,
+        lager,
+        lager_logstash_formatter,
+        woody,
+        scoper,
+        bender_proto,
+        machinery,
+        erl_health,
+        snowflake
+    ]},
+    {mod, {bender, []}},
+    {env, []}
+]}.
