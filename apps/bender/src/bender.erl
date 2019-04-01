@@ -47,8 +47,56 @@ stop(_State) ->
     {ok, {supervisor:sup_flags(), [supervisor:child_spec()]}}.
 
 init([]) ->
-    {ok, Ip} = inet:parse_address(genlib_app:env(?MODULE, ip, "::")),
-    HealthCheckers = genlib_app:env(?MODULE, health_checkers, []),
+    ChildSpec = woody_server:child_spec(
+        ?MODULE,
+        #{
+            ip                => get_ip_address(),
+            port              => get_port(),
+            protocol_opts     => get_protocol_opts(),
+            event_handler     => scoper_woody_event_handler,
+            handlers          => [get_handler_spec()],
+            additional_routes => get_routes()
+        }
+    ),
+    {ok, {
+        #{strategy => one_for_all, intensity => 6, period => 30},
+        [ChildSpec]
+    }}.
+
+-spec get_ip_address() ->
+    inet:ip_address().
+
+get_ip_address() ->
+    {ok, Address} = inet:parse_address(genlib_app:env(?MODULE, ip, "::")),
+    Address.
+
+-spec get_port() ->
+    inet:port_number().
+
+get_port() ->
+    genlib_app:env(?MODULE, port, 8022).
+
+-spec get_protocol_opts() ->
+    cowboy_protocol:opts().
+
+get_protocol_opts() ->
+    genlib_app:env(?MODULE, net_opts, []).
+
+-spec get_handler_spec() ->
+    woody:http_handler(woody:th_handler()).
+
+get_handler_spec() ->
+    Opts = genlib_app:env(?MODULE, service, #{}),
+    Path = maps:get(path, Opts, <<"/v1/bender">>),
+    {Path, {
+        {bender_thrift, 'Bender'},
+        bender_handler
+    }}.
+
+-spec get_routes() ->
+    [woody_server_thrift_http_handler:route(_)].
+
+get_routes() ->
     RouteOptsEnv = genlib_app:env(?MODULE, route_opts, #{}),
     RouteOpts = RouteOptsEnv#{event_handler => scoper_woody_event_handler},
     Automaton = genlib_app:env(bender, automaton, #{}),
@@ -60,34 +108,6 @@ init([]) ->
             }
         }}
     ],
-    ChildSpec = woody_server:child_spec(
-        ?MODULE,
-        #{
-            ip            => Ip,
-            port          => genlib_app:env(?MODULE, port, 8022),
-            net_opts      => genlib_app:env(?MODULE, net_opts, []),
-            event_handler => scoper_woody_event_handler,
-            handlers      => [],
-            additional_routes => [
-                erl_health_handle:get_route(HealthCheckers) |
-                get_bender_route()
-            ] ++ machinery_mg_backend:get_routes(Handlers, RouteOpts)
-        }
-    ),
-    {ok, {
-        #{strategy => one_for_all, intensity => 6, period => 30},
-        [ChildSpec]
-    }}.
-
--spec get_bender_route() ->
-    [woody_server_thrift_http_handler:route(_)].
-
-get_bender_route() ->
-    Opts   = genlib_app:env(?MODULE, service, #{}),
-    Path   = maps:get(path, Opts, <<"/v1/bender">>),
-    Limits = genlib_map:get(handler_limits, Opts),
-    woody_server_thrift_http_handler:get_routes(genlib_map:compact(#{
-        handlers       => [{Path, {{bender_thrift, 'Bender'}, {bender_handler, []}}}],
-        event_handler  => scoper_woody_event_handler,
-        handler_limits => Limits
-    })).
+    HealthCheckers = genlib_app:env(?MODULE, health_checkers, []),
+    [erl_health_handle:get_route(HealthCheckers) |
+     machinery_mg_backend:get_routes(Handlers, RouteOpts)].
