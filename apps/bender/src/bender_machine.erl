@@ -1,8 +1,8 @@
--module(bender_snowflake).
+-module(bender_machine).
 
 %% API
 
--export([bind/3]).
+-export([bind/4]).
 
 %% Machinery callbacks
 
@@ -15,6 +15,7 @@
 
 -type external_id()  :: binary().
 -type internal_id()  :: binary().
+-type schema()       :: bender:schema().
 -type user_context() :: msgpack_thrift:'Value'() | undefined.
 -type data()         :: map().
 
@@ -25,15 +26,17 @@
 -type handler_args() :: machinery:handler_args(_).
 -type handler_opts() :: machinery:handler_opts(_).
 
--define(NS, bender_snowflake).
+-include("bender_internal.hrl").
+
+-define(NS, bender_machine).
 
 %%% API
 
--spec bind(external_id(), user_context(), woody_context()) ->
+-spec bind(external_id(), schema(), user_context(), woody_context()) ->
     {ok, internal_id(), user_context()}.
 
-bind(ExternalID, Data, Context) ->
-    case start(ExternalID, Data, Context) of
+bind(ExternalID, Schema, Data, Context) ->
+    case start(ExternalID, Schema, Data, Context) of
         ok ->
             {ok, InternalID, _} = get(ExternalID, Context),
             {ok, InternalID, undefined};
@@ -46,8 +49,8 @@ bind(ExternalID, Data, Context) ->
 -spec init(args(), machine(), handler_args(), handler_opts()) ->
     machinery:result(_, data()).
 
-init(Data, _Machine, _HandlerArgs, _HandlerOpts) ->
-    InternalID = bender_utils:unique_id(),
+init([Schema, Data], _Machine, _HandlerArgs, HandlerOpts) ->
+    InternalID = generate(Schema, HandlerOpts),
     #{
         aux_state => #{
             <<"internal_id">> => InternalID,
@@ -75,11 +78,11 @@ process_repair(_Args, _Machine, _HandlerArgs, _HandlerOpts) ->
 
 %%% Internal functions
 
--spec start(external_id(), machinery:args(user_context()), woody_context()) ->
+-spec start(external_id(), schema(), machinery:args(user_context()), woody_context()) ->
     ok | {error, exists}.
 
-start(ExternalID, Data, Context) ->
-    machinery:start(?NS, ExternalID, Data, get_backend(Context)).
+start(ExternalID, Schema, Data, Context) ->
+    machinery:start(?NS, ExternalID, [Schema, Data], get_backend(Context)).
 
 -spec get(external_id(), woody_context()) ->
     {ok, data()} | {error, notfound}.
@@ -89,7 +92,7 @@ get(ExternalID, Context) ->
         {ok, Machine} ->
             #{
                 <<"internal_id">> := InternalID,
-                <<"data">> := Data
+                <<"data">>        := Data
             } = get_machine_state(Machine),
             {ok, InternalID, Data};
         {error, notfound} = Error ->
@@ -106,7 +109,7 @@ get_machine_state(#{aux_state := Data}) ->
     machinery_mg_backend:backend().
 
 get_backend(Context) ->
-    Automaton = genlib_app:env(bender, automaton, #{}),
+    Automaton = genlib_app:env(bender, machine, #{}),
     machinery_mg_backend:new(Context, #{
         client => get_woody_client(Automaton),
         schema => maps:get(schema, Automaton, machinery_mg_schema_generic)
@@ -127,3 +130,16 @@ get_woody_client(Automaton) ->
 
 not_implemented(What) ->
     erlang:error({not_implemented, What}).
+
+-spec generate(schema(), handler_opts()) ->
+    internal_id().
+
+generate(snowflake, _HandlerOpts) ->
+    bender_utils:unique_id();
+
+generate(#constant{internal_id = InternalID}, _HandlerOpts) ->
+    InternalID;
+
+generate(#sequence{id = SequenceID}, #{woody_ctx := WoodyCtx}) ->
+    {ok, Value} = bender_sequence:get_next(SequenceID, WoodyCtx),
+    integer_to_binary(Value).

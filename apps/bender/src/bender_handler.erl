@@ -8,6 +8,8 @@
 
 -include_lib("bender_proto/include/bender_thrift.hrl").
 
+-include("bender_internal.hrl").
+
 -type woody_context() :: woody_context:ctx().
 
 -type external_id()  :: bender_thrift:'ExternalID'().
@@ -37,12 +39,26 @@ handle_function_('GenerateID', [ExternalID, Schema, Data], Context, _Opts) ->
 -spec generate_id(external_id(), schema(), user_context(), woody_context()) ->
     {ok, result()} | no_return().
 
+generate_id(ExternalID, {constant, #bender_ConstantSchema{} = Schema}, Data, Context) ->
+    NewInternalID = Schema#bender_ConstantSchema.internal_id,
+    Constant      = #constant{internal_id = NewInternalID},
+    bind(ExternalID, Constant, Data, Context);
+
+generate_id(ExternalID, {sequence, #bender_SequenceSchema{} = Schema}, Data, Context) ->
+    SequenceID = Schema#bender_SequenceSchema.sequence_id,
+    Sequence   = #sequence{id = SequenceID},
+    bind(ExternalID, Sequence, Data, Context);
+
 generate_id(ExternalID, {snowflake, #bender_SnowflakeSchema{}}, Data, Context) ->
-    {ok, InternalID, PrevData} = bender_snowflake:bind(ExternalID, Data, Context),
-    Result = #bender_GenerationResult{
+    bind(ExternalID, snowflake, Data, Context);
+
+generate_id(_ExternalID, Schema, _Data, _Context) ->
+    erlang:error({unknown_schema, Schema}).
+
+bind(ExternalID, Schema, Data, Context) ->
+    {ok, InternalID, PrevData} = bender_machine:bind(ExternalID, Schema, Data, Context),
+        Result = #bender_GenerationResult{
         internal_id = InternalID,
         context     = PrevData
     },
-    {ok, Result};
-generate_id(_ExternalID, Schema, _Data, _Context) ->
-    erlang:error({unknown_schema, Schema}).
+    {ok, Result}.

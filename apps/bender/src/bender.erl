@@ -13,6 +13,12 @@
 %% Supervisor callbacks
 -export([init/1]).
 
+-include("bender_internal.hrl").
+
+-type schema() :: snowflake | #constant{} | #sequence{}.
+
+-export_type([schema/0]).
+
 %% API
 
 -spec start() ->
@@ -99,12 +105,19 @@ get_handler_spec() ->
 get_routes() ->
     RouteOptsEnv = genlib_app:env(?MODULE, route_opts, #{}),
     RouteOpts = RouteOptsEnv#{event_handler => scoper_woody_event_handler},
-    Automaton = genlib_app:env(bender, automaton, #{}),
+    Machine = genlib_app:env(bender, machine, #{}),
+    Sequence = genlib_app:env(bender, sequence, #{}),
     Handlers = [
-        {bender_snowflake, #{
-            path => maps:get(path, Automaton, <<"/v1/stateproc/bender_snowflake">>),
+        {bender_machine, #{
+            path => maps:get(path, Machine, <<"/v1/stateproc/bender_machine">>),
             backend_config => #{
-                schema => maps:get(schema, Automaton, machinery_mg_schema_generic)
+                schema => maps:get(schema, Machine, machinery_mg_schema_generic)
+            }
+        }},
+        {bender_sequence, #{
+            path => maps:get(path, Sequence, <<"/v1/stateproc/bender_sequence">>),
+            backend_config => #{
+                schema => maps:get(schema, Sequence, machinery_mg_schema_generic)
             }
         }}
     ],
