@@ -83,10 +83,10 @@ get_port() ->
     genlib_app:env(?MODULE, port, 8022).
 
 -spec get_protocol_opts() ->
-    cowboy_protocol:opts().
+    woody_server_thrift_http_handler:protocol_opts().
 
 get_protocol_opts() ->
-    genlib_app:env(?MODULE, net_opts, []).
+    genlib_app:env(?MODULE, net_opts, #{}).
 
 -spec get_handler_spec() ->
     woody:http_handler(woody:th_handler()).

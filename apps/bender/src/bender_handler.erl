@@ -13,7 +13,7 @@
 -type woody_context() :: woody_context:ctx().
 
 -type external_id()  :: bender_thrift:'ExternalID'().
--type schema()       :: bender_thrift:'GenerationSchema'().
+-type schema()       :: bender:schema().
 -type user_context() :: msgpack_thrift:'Value'().
 -type result()       :: bender_thrift:'GenerationResult'().
 
@@ -36,7 +36,7 @@ handle_function_('GenerateID', [ExternalID, Schema, Data], Context, _Opts) ->
     }),
     generate_id(ExternalID, Schema, Data, Context).
 
--spec generate_id(external_id(), schema(), user_context(), woody_context()) ->
+-spec generate_id(external_id(), bender_thrift:'GenerationSchema'(), user_context(), woody_context()) ->
     {ok, result()} | no_return().
 
 generate_id(ExternalID, {constant, #bender_ConstantSchema{} = Schema}, Data, Context) ->
@@ -55,9 +55,12 @@ generate_id(ExternalID, {snowflake, #bender_SnowflakeSchema{}}, Data, Context) -
 generate_id(_ExternalID, Schema, _Data, _Context) ->
     erlang:error({unknown_schema, Schema}).
 
+-spec bind(external_id(), schema(), user_context(), woody_context()) ->
+    {ok, #bender_GenerationResult{}} | no_return().
+
 bind(ExternalID, Schema, Data, Context) ->
     {ok, InternalID, PrevData} = bender_machine:bind(ExternalID, Schema, Data, Context),
-        Result = #bender_GenerationResult{
+    Result = #bender_GenerationResult{
         internal_id = InternalID,
         context     = PrevData
     },

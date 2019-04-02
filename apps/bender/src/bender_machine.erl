@@ -33,7 +33,7 @@
 %%% API
 
 -spec bind(external_id(), schema(), user_context(), woody_context()) ->
-    {ok, internal_id(), user_context()}.
+    {ok, internal_id(), user_context()} | no_return().
 
 bind(ExternalID, Schema, Data, Context) ->
     case start(ExternalID, Schema, Data, Context) of
@@ -85,7 +85,7 @@ start(ExternalID, Schema, Data, Context) ->
     machinery:start(?NS, ExternalID, [Schema, Data], get_backend(Context)).
 
 -spec get(external_id(), woody_context()) ->
-    {ok, data()} | {error, notfound}.
+    {ok, internal_id(), user_context()} | no_return().
 
 get(ExternalID, Context) ->
     case machinery:get(?NS, ExternalID, get_backend(Context)) of
@@ -95,8 +95,8 @@ get(ExternalID, Context) ->
                 <<"data">>        := Data
             } = get_machine_state(Machine),
             {ok, InternalID, Data};
-        {error, notfound} = Error ->
-            Error
+        {error, notfound} ->
+            throw({not_found, ExternalID})
     end.
 
 -spec get_machine_state(machinery:machine(_, data())) ->
