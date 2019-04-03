@@ -6,7 +6,6 @@
         kernel,
         stdlib,
         lager,
-        lager_logstash_formatter,
         woody,
         scoper,
         bender_proto,
