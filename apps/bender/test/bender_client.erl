@@ -20,8 +20,8 @@ new() ->
 -spec generate_id(external_id(), schema(), user_context(), client()) ->
     woody:result() | no_return().
 
-generate_id(ExternalID, Schema, Data, Client) ->
-    call('GenerateID', [ExternalID, Schema, Data], Client).
+generate_id(ExternalID, Schema, UserCtx, Client) ->
+    call('GenerateID', [ExternalID, Schema, UserCtx], Client).
 
 %%% Internal functions
 

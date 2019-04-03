@@ -20,53 +20,62 @@
 
 -type woody_context() :: woody_context:ctx().
 
--type args()         :: machinery:args(_).
--type machine()      :: machinery:machine(_, _).
+-type args(T)        :: machinery:args(T).
+-type machine()      :: machinery:machine(_, state()).
 -type handler_args() :: machinery:handler_args(_).
 -type handler_opts() :: machinery:handler_opts(_).
+-type result(A)      :: machinery:result(none(), A).
+-type response(T)    :: machinery:response(T).
+
+-type value() :: non_neg_integer().
+-type state() :: #{
+    value := value()
+}.
 
 -define(NS, bender_sequence).
+
+-define(initial_value, 0).
 
 %%% API
 
 -spec get_current(id(), woody_context()) ->
-    {ok, non_neg_integer()} | {error, notfound}.
+    {ok, value()} | {error, notfound}.
 
-get_current(SequenceID, Context) ->
-    case get_state(SequenceID, Context) of
-        {ok, #{<<"value">> := Value}} ->
-            {ok, Value};
+get_current(SequenceID, WoodyCtx) ->
+    case get_state(SequenceID, WoodyCtx) of
+        {ok, State} ->
+            {ok, get_value(State)};
         _ ->
             {error, notfound}
     end.
 
 -spec get_next(id(), woody_context()) ->
-    {ok, non_neg_integer()}.
+    {ok, value()}.
 
-get_next(SequenceID, Context) ->
-    ok = ensure_started(SequenceID, Context),
-    call(SequenceID, get_next, Context).
+get_next(SequenceID, WoodyCtx) ->
+    ok = ensure_started(SequenceID, WoodyCtx),
+    call(SequenceID, get_next, WoodyCtx).
 
 %%% Machinery callbacks
 
--spec init(args(), machine(), handler_args(), handler_opts()) ->
-    machinery:result(_, _).
+-spec init(args([]), machine(), handler_args(), handler_opts()) ->
+    result(state()).
 
 init([], _Machine, _HandlerArgs, _HandlerOpts) ->
     #{
         aux_state => #{
-            <<"value">> => 0
+            value => ?initial_value
         }
     }.
 
--spec process_call(args(), machine(), handler_args(), handler_opts()) ->
-    {machinery:response(_), machinery:result(_, _)} | no_return().
+-spec process_call(args(get_next | any()), machine(), handler_args(), handler_opts()) ->
+    {response(value()), result(state())} | no_return().
 
 process_call(get_next, Machine, _HandlerArgs, _HandlerOpts) ->
-    #{aux_state := State} = Machine,
-    #{<<"value">> := Value} = State,
+    State    = get_machine_state(Machine),
+    Value    = get_value(State),
     NewValue = Value + 1,
-    NewState = State#{<<"value">> => NewValue},
+    NewState = set_value(State, NewValue),
     {NewValue, #{aux_state => NewState}};
 
 process_call(_Args, _Machine, _HandlerArgs, _HandlerOpts) ->
@@ -78,7 +87,7 @@ process_call(_Args, _Machine, _HandlerArgs, _HandlerOpts) ->
 process_timeout(_Machine, _HandlerArgs, _HandlerOpts) ->
     not_implemented(timeout).
 
--spec process_repair(args(), machine(), handler_args(), handler_opts()) ->
+-spec process_repair(args(_), machine(), handler_args(), handler_opts()) ->
     no_return().
 
 process_repair(_Args, _Machine, _HandlerArgs, _HandlerOpts) ->
@@ -89,31 +98,31 @@ process_repair(_Args, _Machine, _HandlerArgs, _HandlerOpts) ->
 -spec start(id(), woody_context()) ->
     ok | {error, exists}.
 
-start(SequenceID, Context) ->
-    machinery:start(?NS, SequenceID, [], get_backend(Context)).
+start(SequenceID, WoodyCtx) ->
+    machinery:start(?NS, SequenceID, [], get_backend(WoodyCtx)).
 
 -spec ensure_started(id(), woody_context()) ->
     ok | no_return().
 
-ensure_started(SequenceID, Context) ->
-    case start(SequenceID, Context) of
+ensure_started(SequenceID, WoodyCtx) ->
+    case start(SequenceID, WoodyCtx) of
         ok ->
             ok;
         {error, exists} ->
             ok
     end.
 
--spec call(id(), machinery:args(_), woody_context()) ->
-    {ok, machinery:response(_)} | {error, notfound}.
+-spec call(id(), args(_), woody_context()) ->
+    {ok, response(_)} | {error, notfound}.
 
-call(SequenceID, Msg, Context) ->
-    machinery:call(?NS, SequenceID, Msg, get_backend(Context)).
+call(SequenceID, Msg, WoodyCtx) ->
+    machinery:call(?NS, SequenceID, Msg, get_backend(WoodyCtx)).
 
 -spec get_state(id(), woody_context()) ->
-    {ok, term()} | {error, notfound}.
+    {ok, state()} | {error, notfound}.
 
-get_state(SequenceID, Context) ->
-    case machinery:get(?NS, SequenceID, get_backend(Context)) of
+get_state(SequenceID, WoodyCtx) ->
+    case machinery:get(?NS, SequenceID, get_backend(WoodyCtx)) of
         {ok, Machine} ->
             State = get_machine_state(Machine),
             {ok, State};
@@ -121,8 +130,8 @@ get_state(SequenceID, Context) ->
             Error
     end.
 
--spec get_machine_state(machinery:machine(_, _)) ->
-    term().
+-spec get_machine_state(machine()) ->
+    state().
 
 get_machine_state(#{aux_state := State}) ->
     State.
@@ -130,25 +139,23 @@ get_machine_state(#{aux_state := State}) ->
 -spec get_backend(woody_context()) ->
     machinery_mg_backend:backend().
 
-get_backend(Context) ->
-    Automaton = genlib_app:env(bender, sequence, #{}),
-    machinery_mg_backend:new(Context, #{
-        client => get_woody_client(Automaton),
-        schema => maps:get(schema, Automaton, machinery_mg_schema_generic)
-    }).
-
--spec get_woody_client(map()) ->
-    machinery_mg_client:woody_client().
-
-get_woody_client(Automaton) ->
-    #{
-        url => maps:get(url, Automaton),
-        event_handler => maps:get(event_handler, Automaton)
-        % FIXME: should we add optional transport_opts here?
-    }.
+get_backend(WoodyCtx) ->
+    bender_utils:get_backend(sequence, WoodyCtx).
 
 -spec not_implemented(any()) ->
     no_return().
 
 not_implemented(What) ->
     erlang:error({not_implemented, What}).
+
+-spec get_value(state()) ->
+    value().
+
+get_value(#{value := Value}) ->
+    Value.
+
+-spec set_value(state(), value()) ->
+    state().
+
+set_value(State, Value) ->
+    State#{value => Value}.

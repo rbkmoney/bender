@@ -22,13 +22,13 @@
 %% API
 
 -spec start() ->
-    {ok, _}.
+    {ok, [atom()]} | {error, {atom(), term()}}.
 
 start() ->
     application:ensure_all_started(?MODULE).
 
 -spec stop() ->
-    ok.
+    ok | {error, term()}.
 
 stop() ->
     application:stop(?MODULE).
@@ -59,6 +59,7 @@ init([]) ->
             ip                => get_ip_address(),
             port              => get_port(),
             protocol_opts     => get_protocol_opts(),
+            transport_opts    => get_transport_opts(),
             event_handler     => scoper_woody_event_handler,
             handlers          => [get_handler_spec()],
             additional_routes => get_routes()
@@ -88,6 +89,12 @@ get_port() ->
 get_protocol_opts() ->
     genlib_app:env(?MODULE, protocol_opts, #{}).
 
+-spec get_transport_opts() ->
+    woody_server_thrift_http_handler:transport_opts().
+
+get_transport_opts() ->
+    genlib_app:env(?MODULE, transport_opts, #{}).
+
 -spec get_handler_spec() ->
     woody:http_handler(woody:th_handler()).
 
@@ -105,13 +112,13 @@ get_handler_spec() ->
 get_routes() ->
     RouteOptsEnv = genlib_app:env(?MODULE, route_opts, #{}),
     RouteOpts = RouteOptsEnv#{event_handler => scoper_woody_event_handler},
-    Machine = genlib_app:env(bender, machine, #{}),
+    Generator = genlib_app:env(bender, generator, #{}),
     Sequence = genlib_app:env(bender, sequence, #{}),
     Handlers = [
-        {bender_machine, #{
-            path => maps:get(path, Machine, <<"/v1/stateproc/bender_machine">>),
+        {bender_generator, #{
+            path => maps:get(path, Generator, <<"/v1/stateproc/bender_generator">>),
             backend_config => #{
-                schema => maps:get(schema, Machine, machinery_mg_schema_generic)
+                schema => maps:get(schema, Generator, machinery_mg_schema_generic)
             }
         }},
         {bender_sequence, #{

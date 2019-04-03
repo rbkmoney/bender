@@ -1,9 +1,9 @@
 service_name: machinegun
 
 namespaces:
-    bender_machine:
+    bender_generator:
         processor:
-            url: http://bender:8022/v1/stateproc/bender_machine
+            url: http://bender:8022/v1/stateproc/bender_generator
     bender_sequence:
         processor:
             url: http://bender:8022/v1/stateproc/bender_sequence

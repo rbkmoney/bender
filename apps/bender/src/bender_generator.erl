@@ -1,4 +1,4 @@
--module(bender_machine).
+-module(bender_generator).
 
 %% API
 
@@ -17,48 +17,52 @@
 -type internal_id()  :: binary().
 -type schema()       :: bender:schema().
 -type user_context() :: msgpack_thrift:'Value'() | undefined.
--type data()         :: map().
+-type state()        :: #{
+    internal_id  := internal_id(),
+    user_context := user_context()
+}.
 
 -type woody_context() :: woody_context:ctx().
 
--type args()         :: machinery:args(_).
--type machine()      :: machinery:machine(_, _).
+-type args(T)        :: machinery:args(T).
+-type machine()      :: machinery:machine(_, state()).
 -type handler_args() :: machinery:handler_args(_).
 -type handler_opts() :: machinery:handler_opts(_).
+-type result(A)      :: machinery:result(none(), A).
 
 -include("bender_internal.hrl").
 
--define(NS, bender_machine).
+-define(NS, bender_generator).
 
 %%% API
 
 -spec bind(external_id(), schema(), user_context(), woody_context()) ->
     {ok, internal_id(), user_context()} | no_return().
 
-bind(ExternalID, Schema, Data, Context) ->
-    case start(ExternalID, Schema, Data, Context) of
+bind(ExternalID, Schema, UserCtx, WoodyCtx) ->
+    case start(ExternalID, Schema, UserCtx, WoodyCtx) of
         ok ->
-            {ok, InternalID, _} = get(ExternalID, Context),
+            {ok, InternalID, _} = get(ExternalID, WoodyCtx),
             {ok, InternalID, undefined};
         {error, exists} ->
-            get(ExternalID, Context)
+            get(ExternalID, WoodyCtx)
     end.
 
 %%% Machinery callbacks
 
--spec init(args(), machine(), handler_args(), handler_opts()) ->
-    machinery:result(_, data()).
+-spec init(args({schema(), user_context()}), machine(), handler_args(), handler_opts()) ->
+    result(state()).
 
-init([Schema, Data], _Machine, _HandlerArgs, HandlerOpts) ->
+init({Schema, UserCtx}, _Machine, _HandlerArgs, HandlerOpts) ->
     InternalID = generate(Schema, HandlerOpts),
     #{
         aux_state => #{
-            <<"internal_id">> => InternalID,
-            <<"data">>        => Data
+            internal_id  => InternalID,
+            user_context => UserCtx
         }
     }.
 
--spec process_call(args(), machine(), handler_args(), handler_opts()) ->
+-spec process_call(args(_), machine(), handler_args(), handler_opts()) ->
     no_return().
 
 process_call(_Args, _Machine, _HandlerArgs, _HandlerOpts) ->
@@ -70,7 +74,7 @@ process_call(_Args, _Machine, _HandlerArgs, _HandlerOpts) ->
 process_timeout(_Machine, _HandlerArgs, _HandlerOpts) ->
     not_implemented(timeout).
 
--spec process_repair(args(), machine(), handler_args(), handler_opts()) ->
+-spec process_repair(args(_), machine(), handler_args(), handler_opts()) ->
     no_return().
 
 process_repair(_Args, _Machine, _HandlerArgs, _HandlerOpts) ->
@@ -78,52 +82,38 @@ process_repair(_Args, _Machine, _HandlerArgs, _HandlerOpts) ->
 
 %%% Internal functions
 
--spec start(external_id(), schema(), machinery:args(user_context()), woody_context()) ->
+-spec start(external_id(), schema(), user_context(), woody_context()) ->
     ok | {error, exists}.
 
-start(ExternalID, Schema, Data, Context) ->
-    machinery:start(?NS, ExternalID, [Schema, Data], get_backend(Context)).
+start(ExternalID, Schema, UserCtx, WoodyCtx) ->
+    machinery:start(?NS, ExternalID, {Schema, UserCtx}, get_backend(WoodyCtx)).
 
 -spec get(external_id(), woody_context()) ->
     {ok, internal_id(), user_context()} | no_return().
 
-get(ExternalID, Context) ->
-    case machinery:get(?NS, ExternalID, get_backend(Context)) of
+get(ExternalID, WoodyCtx) ->
+    case machinery:get(?NS, ExternalID, get_backend(WoodyCtx)) of
         {ok, Machine} ->
             #{
-                <<"internal_id">> := InternalID,
-                <<"data">>        := Data
+                internal_id  := InternalID,
+                user_context := UserCtx
             } = get_machine_state(Machine),
-            {ok, InternalID, Data};
+            {ok, InternalID, UserCtx};
         {error, notfound} ->
             throw({not_found, ExternalID})
     end.
 
--spec get_machine_state(machinery:machine(_, data())) ->
-    any().
+-spec get_machine_state(machine()) ->
+    state().
 
-get_machine_state(#{aux_state := Data}) ->
-    Data.
+get_machine_state(#{aux_state := State}) ->
+    State.
 
 -spec get_backend(woody_context()) ->
     machinery_mg_backend:backend().
 
-get_backend(Context) ->
-    Automaton = genlib_app:env(bender, machine, #{}),
-    machinery_mg_backend:new(Context, #{
-        client => get_woody_client(Automaton),
-        schema => maps:get(schema, Automaton, machinery_mg_schema_generic)
-    }).
-
--spec get_woody_client(map()) ->
-    machinery_mg_client:woody_client().
-
-get_woody_client(Automaton) ->
-    #{
-        url => maps:get(url, Automaton),
-        event_handler => maps:get(event_handler, Automaton)
-        % FIXME: should we add optional transport_opts here?
-    }.
+get_backend(WoodyCtx) ->
+    bender_utils:get_backend(generator, WoodyCtx).
 
 -spec not_implemented(any()) ->
     no_return().

@@ -47,8 +47,8 @@ init_per_suite(C) ->
     ]) ++ genlib_app:start_application_with(scoper, [
         {storage, scoper_storage_lager}
     ]) ++ genlib_app:start_application_with(bender, [
-        {machine, #{
-            path          => <<"/v1/stateproc/bender_machine">>,
+        {generator, #{
+            path          => <<"/v1/stateproc/bender_generator">>,
             schema        => machinery_mg_schema_generic,
             url           => <<"http://machinegun:8022/v1/automaton">>,
             event_handler => scoper_woody_event_handler
@@ -89,15 +89,15 @@ constant(C) ->
     ExternalID = bender_utils:unique_id(),
     InternalID = bender_utils:unique_id(),
     Schema     = {constant, #bender_ConstantSchema{internal_id = InternalID}},
-    UserData   = {bin, <<"spiel mit mir">>},
+    UserCtx    = {bin, <<"spiel mit mir">>},
     #bender_GenerationResult{
         internal_id = InternalID,
-        context = undefined
-    } = bender_client:generate_id(ExternalID, Schema, UserData, Client),
+        context     = undefined
+    } = bender_client:generate_id(ExternalID, Schema, UserCtx, Client),
     #bender_GenerationResult{
         internal_id = InternalID,
-        context = UserData
-    } = bender_client:generate_id(ExternalID, Schema, UserData, Client),
+        context     = UserCtx
+    } = bender_client:generate_id(ExternalID, Schema, UserCtx, Client),
     ok.
 
 -spec sequence(config()) ->
@@ -108,20 +108,20 @@ sequence(C) ->
     SequenceID = bender_utils:unique_id(),
     ExternalID = bender_utils:unique_id(),
     Schema     = {sequence, #bender_SequenceSchema{sequence_id = SequenceID}},
-    UserData   = {bin, <<"come to daddy">>},
+    UserCtx    = {bin, <<"come to daddy">>},
     #bender_GenerationResult{
         internal_id = <<"1">>,
-        context = undefined
-    } = bender_client:generate_id(ExternalID, Schema, UserData, Client),
+        context     = undefined
+    } = bender_client:generate_id(ExternalID, Schema, UserCtx, Client),
     OtherID = bender_utils:unique_id(),
     #bender_GenerationResult{
         internal_id = <<"2">>,
-        context = undefined
-    } = bender_client:generate_id(OtherID, Schema, UserData, Client),
+        context     = undefined
+    } = bender_client:generate_id(OtherID, Schema, UserCtx, Client),
     #bender_GenerationResult{
         internal_id = <<"1">>,
-        context = UserData
-    } = bender_client:generate_id(ExternalID, Schema, UserData, Client),
+        context     = UserCtx
+    } = bender_client:generate_id(ExternalID, Schema, UserCtx, Client),
     ok.
 
 -spec snowflake(config()) ->
@@ -131,15 +131,15 @@ snowflake(C) ->
     Client     = proplists:get_value(client, C),
     ExternalID = bender_utils:unique_id(),
     Schema     = {snowflake, #bender_SnowflakeSchema{}},
-    UserData   = {bin, <<"breaking nudes">>},
+    UserCtx    = {bin, <<"breaking nudes">>},
     #bender_GenerationResult{
         internal_id = InternalID,
-        context = undefined
-    } = bender_client:generate_id(ExternalID, Schema, UserData, Client),
+        context     = undefined
+    } = bender_client:generate_id(ExternalID, Schema, UserCtx, Client),
     #bender_GenerationResult{
         internal_id = InternalID,
-        context = UserData
-    } = bender_client:generate_id(ExternalID, Schema, UserData, Client),
+        context     = UserCtx
+    } = bender_client:generate_id(ExternalID, Schema, UserCtx, Client),
     ok.
 
 -spec different_schemas(config()) ->
@@ -149,19 +149,19 @@ different_schemas(C) ->
     Client     = proplists:get_value(client, C),
     ExternalID = bender_utils:unique_id(),
     Schema1    = {sequence, #bender_SequenceSchema{sequence_id = bender_utils:unique_id()}},
-    UserData   = {bin, <<"wo bist do">>},
+    UserCtx    = {bin, <<"wo bist do">>},
     #bender_GenerationResult{
         internal_id = InternalID,
-        context = undefined
-    } = bender_client:generate_id(ExternalID, Schema1, UserData, Client),
+        context     = undefined
+    } = bender_client:generate_id(ExternalID, Schema1, UserCtx, Client),
     Schema2 = {snowflake, #bender_SnowflakeSchema{}},
     #bender_GenerationResult{
         internal_id = InternalID,
-        context = UserData
-    } = bender_client:generate_id(ExternalID, Schema2, UserData, Client),
+        context     = UserCtx
+    } = bender_client:generate_id(ExternalID, Schema2, UserCtx, Client),
     Schema3 = {constant, #bender_ConstantSchema{internal_id = bender_utils:unique_id()}},
     #bender_GenerationResult{
         internal_id = InternalID,
-        context = UserData
-    } = bender_client:generate_id(ExternalID, Schema3, UserData, Client),
+        context     = UserCtx
+    } = bender_client:generate_id(ExternalID, Schema3, UserCtx, Client),
     ok.
