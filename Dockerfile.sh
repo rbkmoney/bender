@@ -1,7 +1,7 @@
 #!/bin/bash
 cat <<EOF
 FROM $BASE_IMAGE
-MAINTAINER Natalia Pulina <n.pulina@rbkmoney.com>
+MAINTAINER Sergei Shuvatov <s.shuvatov@rbkmoney.com>
 COPY ./_build/prod/rel/bender /opt/bender
 CMD /opt/bender/bin/bender foreground
 EXPOSE 8022
