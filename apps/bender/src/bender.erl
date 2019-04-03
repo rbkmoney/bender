@@ -86,7 +86,7 @@ get_port() ->
     woody_server_thrift_http_handler:protocol_opts().
 
 get_protocol_opts() ->
-    genlib_app:env(?MODULE, net_opts, #{}).
+    genlib_app:env(?MODULE, protocol_opts, #{}).
 
 -spec get_handler_spec() ->
     woody:http_handler(woody:th_handler()).
