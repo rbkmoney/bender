@@ -60,7 +60,7 @@ init([], _Machine, _HandlerArgs, _HandlerOpts) ->
     }.
 
 -spec process_call(args(), machine(), handler_args(), handler_opts()) ->
-    {machinery:response(_), machinery:result(_,_)} | no_return().
+    {machinery:response(_), machinery:result(_, _)} | no_return().
 
 process_call(get_next, Machine, _HandlerArgs, _HandlerOpts) ->
     #{aux_state := State} = Machine,

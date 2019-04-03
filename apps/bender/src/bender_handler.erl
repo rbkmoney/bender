@@ -56,7 +56,7 @@ generate_id(_ExternalID, Schema, _Data, _Context) ->
     erlang:error({unknown_schema, Schema}).
 
 -spec bind(external_id(), schema(), user_context(), woody_context()) ->
-    {ok, #bender_GenerationResult{}} | no_return().
+    {ok, result()} | no_return().
 
 bind(ExternalID, Schema, Data, Context) ->
     {ok, InternalID, PrevData} = bender_machine:bind(ExternalID, Schema, Data, Context),
