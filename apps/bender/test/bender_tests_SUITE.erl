@@ -31,7 +31,8 @@
 
 all() ->
     [
-        {group, main}
+        {group, main},
+        {group, contention}
     ].
 
 -define(parallel_workers, 1000).
@@ -46,14 +47,16 @@ groups() ->
             {group, sequence},
             {group, snowflake},
             {group, different_schemas},
-            {group, generator_init},
-            contention
+            {group, generator_init}
         ]},
         {constant, [parallel], [ constant || _ <- lists:seq(1, ?parallel_workers) ]},
         {sequence, [parallel], [ sequence || _ <- lists:seq(1, ?parallel_workers) ]},
         {snowflake, [parallel], [ snowflake || _ <- lists:seq(1, ?parallel_workers) ]},
         {different_schemas, [parallel], [ different_schemas || _ <- lists:seq(1, ?parallel_workers) ]},
-        {generator_init, [parallel], [ generator_init || _ <- lists:seq(1, ?parallel_workers) ]}
+        {generator_init, [parallel], [ generator_init || _ <- lists:seq(1, ?parallel_workers) ]},
+        {contention, [{repeat_until_all_ok, 10}], [
+            contention
+        ]}
     ].
 
 -spec init_per_suite(config()) ->
