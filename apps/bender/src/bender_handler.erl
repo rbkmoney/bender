@@ -30,9 +30,7 @@ handle_function(Func, Args, WoodyCtx, Opts) ->
 
 handle_function_('GenerateID', [ExternalID, Schema, UserCtx], WoodyCtx, _Opts) ->
     scoper:add_meta(#{
-        external_id => ExternalID,
-        schema => Schema,
-        context => UserCtx
+        external_id => ExternalID
     }),
     generate_id(ExternalID, Schema, UserCtx, WoodyCtx).
 
