@@ -125,14 +125,8 @@ constant(C) ->
     InternalID = bender_utils:unique_id(),
     Schema     = {constant, #bender_ConstantSchema{internal_id = InternalID}},
     UserCtx    = {bin, <<"spiel mit mir">>},
-    #bender_GenerationResult{
-        internal_id = InternalID,
-        context     = undefined
-    } = bender_client:generate_id(ExternalID, Schema, UserCtx, Client),
-    #bender_GenerationResult{
-        internal_id = InternalID,
-        context     = UserCtx
-    } = bender_client:generate_id(ExternalID, Schema, UserCtx, Client),
+    InternalID = weak(ExternalID, Schema, UserCtx, Client),
+    InternalID = strict(ExternalID, Schema, UserCtx, Client),
     ok.
 
 -spec sequence(config()) ->
@@ -144,19 +138,10 @@ sequence(C) ->
     ExternalID = bender_utils:unique_id(),
     Schema     = {sequence, #bender_SequenceSchema{sequence_id = SequenceID}},
     UserCtx    = {bin, <<"come to daddy">>},
-    #bender_GenerationResult{
-        internal_id = <<"1">>,
-        context     = undefined
-    } = bender_client:generate_id(ExternalID, Schema, UserCtx, Client),
-    OtherID = bender_utils:unique_id(),
-    #bender_GenerationResult{
-        internal_id = <<"2">>,
-        context     = undefined
-    } = bender_client:generate_id(OtherID, Schema, UserCtx, Client),
-    #bender_GenerationResult{
-        internal_id = <<"1">>,
-        context     = UserCtx
-    } = bender_client:generate_id(ExternalID, Schema, UserCtx, Client),
+    <<"1">>    = weak(ExternalID, Schema, UserCtx, Client),
+    OtherID    = bender_utils:unique_id(),
+    <<"2">>    = weak(OtherID, Schema, UserCtx, Client),
+    <<"1">>    = strict(ExternalID, Schema, UserCtx, Client),
     ok.
 
 -spec snowflake(config()) ->
@@ -167,14 +152,8 @@ snowflake(C) ->
     ExternalID = bender_utils:unique_id(),
     Schema     = {snowflake, #bender_SnowflakeSchema{}},
     UserCtx    = {bin, <<"breaking nudes">>},
-    #bender_GenerationResult{
-        internal_id = InternalID,
-        context     = undefined
-    } = bender_client:generate_id(ExternalID, Schema, UserCtx, Client),
-    #bender_GenerationResult{
-        internal_id = InternalID,
-        context     = UserCtx
-    } = bender_client:generate_id(ExternalID, Schema, UserCtx, Client),
+    InternalID = weak(ExternalID, Schema, UserCtx, Client),
+    InternalID = strict(ExternalID, Schema, UserCtx, Client),
     ok.
 
 -spec different_schemas(config()) ->
@@ -185,20 +164,11 @@ different_schemas(C) ->
     ExternalID = bender_utils:unique_id(),
     Schema1    = {sequence, #bender_SequenceSchema{sequence_id = bender_utils:unique_id()}},
     UserCtx    = {bin, <<"wo bist do">>},
-    #bender_GenerationResult{
-        internal_id = InternalID,
-        context     = undefined
-    } = bender_client:generate_id(ExternalID, Schema1, UserCtx, Client),
-    Schema2 = {snowflake, #bender_SnowflakeSchema{}},
-    #bender_GenerationResult{
-        internal_id = InternalID,
-        context     = UserCtx
-    } = bender_client:generate_id(ExternalID, Schema2, UserCtx, Client),
-    Schema3 = {constant, #bender_ConstantSchema{internal_id = bender_utils:unique_id()}},
-    #bender_GenerationResult{
-        internal_id = InternalID,
-        context     = UserCtx
-    } = bender_client:generate_id(ExternalID, Schema3, UserCtx, Client),
+    InternalID = weak(ExternalID, Schema1, UserCtx, Client),
+    Schema2    = {snowflake, #bender_SnowflakeSchema{}},
+    InternalID = strict(ExternalID, Schema2, UserCtx, Client),
+    Schema3    = {constant, #bender_ConstantSchema{internal_id = bender_utils:unique_id()}},
+    InternalID = strict(ExternalID, Schema3, UserCtx, Client),
     ok.
 
 -include_lib("mg_proto/include/mg_proto_state_processing_thrift.hrl").
@@ -237,4 +207,23 @@ generator_init(_C) ->
 %%%
 
 get_client(C) ->
-    proplists:get_value(client, C).
+    ?config(client, C).
+
+generate(ExternalID, Schema, UserCtx, Client) ->
+    #bender_GenerationResult{
+        internal_id = InternalID,
+        context     = PrevUserCtx
+    } = bender_client:generate_id(ExternalID, Schema, UserCtx, Client),
+    {InternalID, PrevUserCtx}.
+
+strict(ExternalID, Schema, UserCtx, Client) ->
+    {InternalID, UserCtx} = generate(ExternalID, Schema, UserCtx, Client),
+    InternalID.
+
+weak(ExternalID, Schema, UserCtx, Client) ->
+    case generate(ExternalID, Schema, UserCtx, Client) of
+        {InternalID, undefined} ->
+            InternalID;
+        {InternalID, UserCtx} ->
+            InternalID
+    end.
