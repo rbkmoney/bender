@@ -35,8 +35,8 @@ all() ->
         {group, contention}
     ].
 
--define(parallel_workers, 1000).
--define(contention_test_workers, 1000).
+-define(parallel_workers, 100).
+-define(contention_test_workers, 100).
 
 -spec groups() -> [{group_name(), list(), [test_case_name()]}].
 
