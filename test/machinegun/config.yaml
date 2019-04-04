@@ -1,22 +1,16 @@
 service_name: machinegun
 
-logging:
-    root: /var/log/machinegun
-    crash_log: crash.log
-    json_log: log.json
-    level: debug
+snowflake_machine_id: 1
 
 namespaces:
     bender_generator:
         processor:
             url: http://bender:8022/v1/stateproc/bender_generator
-            pool_size: 1000
-            connect_timeout: 5S
+            pool_size: 500
     bender_sequence:
         processor:
             url: http://bender:8022/v1/stateproc/bender_sequence
-            pool_size: 1000
-            connect_timeout: 5S
+            pool_size: 500
 
 storage:
     type: memory

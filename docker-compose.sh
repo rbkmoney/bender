@@ -19,7 +19,7 @@ services:
         condition: service_healthy
 
   machinegun:
-    image: dr.rbkmoney.com/rbkmoney/machinegun:5e26162266a3bcf857852cb7844e5626fb0ebf7a
+    image: dr2.rbkmoney.com/rbkmoney/machinegun:f89b294ac584d212264be60cc4db242aeaecce89
     ulimits:
       nofile:
         soft: 65536
@@ -27,7 +27,6 @@ services:
     command: /opt/machinegun/bin/machinegun foreground
     volumes:
       - ./test/machinegun/config.yaml:/opt/machinegun/etc/config.yaml
-      - ./log/:/var/log/machinegun/
     healthcheck:
       test: "curl http://localhost:8022/"
       interval: 5s

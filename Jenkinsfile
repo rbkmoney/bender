@@ -51,7 +51,7 @@ build('bender', 'docker-host', finalHook) {
     }
 
     try {
-      if (env.BRANCH_NAME == 'master' || env.BRANCH_NAME.startsWith('epic')) {
+      if (masterlikeBranch()) {
         runStage('push image') {
           sh "make push_image"
         }

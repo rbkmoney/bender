@@ -33,7 +33,7 @@ all() ->
         {group, main}
     ].
 
--define(parallel_workers, 10).
+-define(parallel_workers, 1000).
 
 -spec groups() -> [{group_name(), list(), [test_case_name()]}].
 
@@ -63,7 +63,7 @@ init_per_suite(C) ->
         {error_logger_hwm, 600},
         {suppress_application_start_stop, true},
         {handlers, [
-            {lager_common_test_backend, [debug, {lager_logstash_formatter, []}]}
+            {lager_common_test_backend, [error, {lager_logstash_formatter, []}]}
         ]}
     ]) ++ genlib_app:start_application_with(scoper, [
         {storage, scoper_storage_lager}
@@ -72,13 +72,19 @@ init_per_suite(C) ->
             path          => <<"/v1/stateproc/bender_generator">>,
             schema        => machinery_mg_schema_generic,
             url           => <<"http://machinegun:8022/v1/automaton">>,
-            event_handler => scoper_woody_event_handler
+            event_handler => scoper_woody_event_handler,
+            transport_opts => #{
+                max_connections => 1000
+            }
         }},
         {sequence, #{
             path          => <<"/v1/stateproc/bender_sequence">>,
             schema        => machinery_mg_schema_generic,
             url           => <<"http://machinegun:8022/v1/automaton">>,
-            event_handler => scoper_woody_event_handler
+            event_handler => scoper_woody_event_handler,
+            transport_opts => #{
+                max_connections => 1000
+            }
         }},
         {protocol_opts, #{
             timeout => 60000
@@ -114,7 +120,7 @@ end_per_testcase(_Name, _C) ->
     ok.
 
 constant(C) ->
-    Client     = proplists:get_value(client, C),
+    Client     = get_client(C),
     ExternalID = bender_utils:unique_id(),
     InternalID = bender_utils:unique_id(),
     Schema     = {constant, #bender_ConstantSchema{internal_id = InternalID}},
@@ -133,7 +139,7 @@ constant(C) ->
     ok.
 
 sequence(C) ->
-    Client     = proplists:get_value(client, C),
+    Client     = get_client(C),
     SequenceID = bender_utils:unique_id(),
     ExternalID = bender_utils:unique_id(),
     Schema     = {sequence, #bender_SequenceSchema{sequence_id = SequenceID}},
@@ -157,7 +163,7 @@ sequence(C) ->
     ok.
 
 snowflake(C) ->
-    Client     = proplists:get_value(client, C),
+    Client     = get_client(C),
     ExternalID = bender_utils:unique_id(),
     Schema     = {snowflake, #bender_SnowflakeSchema{}},
     UserCtx    = {bin, <<"breaking nudes">>},
@@ -175,7 +181,7 @@ snowflake(C) ->
     ok.
 
 different_schemas(C) ->
-    Client     = proplists:get_value(client, C),
+    Client     = get_client(C),
     ExternalID = bender_utils:unique_id(),
     Schema1    = {sequence, #bender_SequenceSchema{sequence_id = bender_utils:unique_id()}},
     UserCtx    = {bin, <<"wo bist do">>},
@@ -220,6 +226,15 @@ generator_init(_C) ->
     Call = {{mg_proto_state_processing_thrift, 'Processor'}, 'ProcessSignal', [Request]},
     Options = #{
         url => <<"http://localhost:8022/v1/stateproc/bender_generator">>,
-        event_handler => scoper_woody_event_handler
+        event_handler => scoper_woody_event_handler,
+        transport_opts => #{
+            checkout_timeout => 1000,
+            max_connections => 10000
+        }
     },
     {ok, _Result} = woody_client:call(Call, Options).
+
+%%%
+
+get_client(C) ->
+    proplists:get_value(client, C).
