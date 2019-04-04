@@ -5,10 +5,6 @@ services:
 
   ${SERVICE_NAME}:
     image: ${BUILD_IMAGE}
-    ulimits:
-      nofile:
-        soft: 65536
-        hard: 65536
     volumes:
       - .:$PWD
       - $HOME/.cache:/home/$UNAME/.cache
@@ -20,10 +16,6 @@ services:
 
   machinegun:
     image: dr2.rbkmoney.com/rbkmoney/machinegun:f89b294ac584d212264be60cc4db242aeaecce89
-    ulimits:
-      nofile:
-        soft: 65536
-        hard: 65536
     command: /opt/machinegun/bin/machinegun foreground
     volumes:
       - ./test/machinegun/config.yaml:/opt/machinegun/etc/config.yaml
