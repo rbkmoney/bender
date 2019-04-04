@@ -14,6 +14,7 @@
 -export([snowflake/1]).
 
 -export([different_schemas/1]).
+-export([contention/1]).
 
 -export([generator_init/1]).
 
@@ -34,6 +35,7 @@ all() ->
     ].
 
 -define(parallel_workers, 1000).
+-define(contention_test_workers, 1000).
 
 -spec groups() -> [{group_name(), list(), [test_case_name()]}].
 
@@ -44,7 +46,8 @@ groups() ->
             {group, sequence},
             {group, snowflake},
             {group, different_schemas},
-            {group, generator_init}
+            {group, generator_init},
+            contention
         ]},
         {constant, [parallel], [ constant || _ <- lists:seq(1, ?parallel_workers) ]},
         {sequence, [parallel], [ sequence || _ <- lists:seq(1, ?parallel_workers) ]},
@@ -170,6 +173,39 @@ different_schemas(C) ->
     InternalID = generate_strict(ExternalID, Schema3, UserCtx, Client),
     ok.
 
+-spec contention(config()) ->
+    ok.
+
+contention(C) ->
+    ExternalID = bender_utils:unique_id(),
+    SequenceID = bender_utils:unique_id(),
+    Data = [
+        {{snowflake, #bender_SnowflakeSchema{}},
+         bender_utils:unique_id()} ||
+        _ <- lists:seq(1, ?contention_test_workers)
+    ] ++ [
+        {{constant, #bender_ConstantSchema{internal_id = bender_utils:unique_id()}},
+         bender_utils:unique_id()} ||
+        _ <- lists:seq(1, ?contention_test_workers)
+    ] ++ [
+        {{sequence, #bender_SequenceSchema{sequence_id = SequenceID}},
+         bender_utils:unique_id()} ||
+        _ <- lists:seq(1, ?contention_test_workers)
+    ],
+    Generate =
+        fun({Schema, UserCtx}) ->
+            Client = get_client(C),
+            UserCtx1 = {bin, term_to_binary({Schema, UserCtx})},
+            {InternalID, PrevUserCtx} = generate(ExternalID, Schema, UserCtx1, Client),
+            {{ExternalID, InternalID, PrevUserCtx}, {Schema, UserCtx}}
+        end,
+    Result = genlib_pmap:map(Generate, shuffle(Data)),
+    [
+        {{ExternalID, InternalID, undefined}, UserCtxOfWinner},
+        {{ExternalID, InternalID, {bin, BinaryCtx}}, _OtherUserCtx}
+    ] = lists:ukeysort(1, Result),
+    UserCtxOfWinner = binary_to_term(BinaryCtx).
+
 -include_lib("mg_proto/include/mg_proto_state_processing_thrift.hrl").
 
 -spec generator_init(config()) ->
@@ -226,3 +262,6 @@ generate_weak(ExternalID, Schema, UserCtx, Client) ->
         {InternalID, UserCtx} ->
             InternalID
     end.
+
+shuffle(L) ->
+    [ T || {_, T} <- lists:sort([ {rand:uniform(), E} || E <- L ]) ].
