@@ -90,7 +90,6 @@ init_per_suite(C) ->
             timeout => 60000
         }},
         {transport_opts, #{
-            handshake_timeout => 60000,
             max_connections => 10000,
             num_acceptors => 100
         }}
