@@ -205,8 +205,8 @@ contention(C) ->
     Result = genlib_pmap:map(Generate, shuffle(Data)),
     [
         % There is a case possible when a winner receives transient error such as timeout
-        % but record is actually stored in machinegun, winner retries it request and receives
-        % response with user context already stored before, not undefined.
+        % but record is actually stored in machinegun, winner retries it's request and
+        % receives response with user context already stored before, not undefined.
         % So we just repeat this test until ok or maximum number of retries reached
         {{ExternalID, InternalID, undefined}, UserCtxOfWinner},
         {{ExternalID, InternalID, {bin, BinaryCtx}}, _OtherUserCtx}
