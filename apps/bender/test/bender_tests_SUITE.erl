@@ -204,10 +204,15 @@ contention(C) ->
         end,
     Result = genlib_pmap:map(Generate, shuffle(Data)),
     [
+        % There is a case possible when a winner receives transient error such as timeout
+        % but record is actually stored in machinegun, winner retries it request and receives
+        % response with user context already stored before, not undefined.
+        % So we just repeat this test until ok or maximum number of retries reached
         {{ExternalID, InternalID, undefined}, UserCtxOfWinner},
         {{ExternalID, InternalID, {bin, BinaryCtx}}, _OtherUserCtx}
     ] = lists:ukeysort(1, Result),
-    UserCtxOfWinner = binary_to_term(BinaryCtx).
+    UserCtxOfWinner = binary_to_term(BinaryCtx),
+    ok.
 
 -include_lib("mg_proto/include/mg_proto_state_processing_thrift.hrl").
 
