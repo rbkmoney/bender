@@ -1,0 +1,16 @@
+service_name: machinegun
+
+snowflake_machine_id: 1
+
+namespaces:
+    bender_generator:
+        processor:
+            url: http://bender:8022/v1/stateproc/bender_generator
+            pool_size: 500
+    bender_sequence:
+        processor:
+            url: http://bender:8022/v1/stateproc/bender_sequence
+            pool_size: 500
+
+storage:
+    type: memory
