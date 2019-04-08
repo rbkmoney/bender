@@ -44,7 +44,8 @@ generate_id(ExternalID, {constant, #bender_ConstantSchema{} = Schema}, UserCtx, 
 
 generate_id(ExternalID, {sequence, #bender_SequenceSchema{} = Schema}, UserCtx, WoodyCtx) ->
     SequenceID = Schema#bender_SequenceSchema.sequence_id,
-    Sequence   = #sequence{id = SequenceID},
+    Minimum    = Schema#bender_SequenceSchema.minimum,
+    Sequence   = #sequence{id = SequenceID, minimum = Minimum},
     bind(ExternalID, Sequence, UserCtx, WoodyCtx);
 
 generate_id(ExternalID, {snowflake, #bender_SnowflakeSchema{}}, UserCtx, WoodyCtx) ->

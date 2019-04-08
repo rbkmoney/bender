@@ -130,6 +130,6 @@ generate(snowflake, _HandlerOpts) ->
 generate(#constant{internal_id = InternalID}, _HandlerOpts) ->
     InternalID;
 
-generate(#sequence{id = SequenceID}, #{woody_ctx := WoodyCtx}) ->
-    {ok, Value} = bender_sequence:get_next(SequenceID, WoodyCtx),
+generate(#sequence{id = SequenceID, minimum = Minimum}, #{woody_ctx := WoodyCtx}) ->
+    {ok, Value} = bender_sequence:get_next(SequenceID, Minimum, WoodyCtx),
     integer_to_binary(Value).

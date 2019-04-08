@@ -11,6 +11,7 @@
 
 -export([constant/1]).
 -export([sequence/1]).
+-export([sequence_minimum/1]).
 -export([snowflake/1]).
 
 -export([different_schemas/1]).
@@ -45,6 +46,7 @@ groups() ->
         {main, [parallel], [
             {group, constant},
             {group, sequence},
+            sequence_minimum,
             {group, snowflake},
             {group, different_schemas},
             {group, generator_init}
@@ -147,6 +149,22 @@ sequence(C) ->
     OtherID    = bender_utils:unique_id(),
     <<"2">>    = generate_weak(OtherID, Schema, UserCtx, Client),
     <<"1">>    = generate_strict(ExternalID, Schema, UserCtx, Client),
+    ok.
+
+-spec sequence_minimum(config()) ->
+    ok.
+
+sequence_minimum(C) ->
+    Client     = get_client(C),
+    SequenceID = bender_utils:unique_id(),
+    Schema1    = {sequence, #bender_SequenceSchema{sequence_id = SequenceID}},
+    UserCtx    = {bin, <<"benutzerkontext">>},
+    <<"1">>    = generate_weak(bender_utils:unique_id(), Schema1, UserCtx, Client),
+    Schema2    = {sequence, #bender_SequenceSchema{sequence_id = SequenceID, minimum = 10}},
+    <<"10">>   = generate_weak(bender_utils:unique_id(), Schema2, UserCtx, Client),
+    OtherSeqID = bender_utils:unique_id(),
+    Schema3    = {sequence, #bender_SequenceSchema{sequence_id = OtherSeqID, minimum = 42}},
+    <<"42">>   = generate_weak(bender_utils:unique_id(), Schema3, UserCtx, Client),
     ok.
 
 -spec snowflake(config()) ->
