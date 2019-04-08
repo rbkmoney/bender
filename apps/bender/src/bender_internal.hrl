@@ -6,7 +6,8 @@
 }).
 
 -record(sequence, {
-    id :: binary()
+    id :: bender_sequence:id(),
+    minimum :: bender_sequence:minimum()
 }).
 
 -endif.

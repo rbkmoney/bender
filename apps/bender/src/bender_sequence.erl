@@ -4,6 +4,7 @@
 
 -export([get_current/2]).
 -export([get_next/2]).
+-export([get_next/3]).
 
 %% Machinery callbacks
 
@@ -15,8 +16,10 @@
 -export([process_repair/4]).
 
 -type id() :: binary().
+-type minimum() :: integer() | undefined.
 
--export_types([id/0]).
+-export_type([id/0]).
+-export_type([minimum/0]).
 
 -type woody_context() :: woody_context:ctx().
 
@@ -53,8 +56,16 @@ get_current(SequenceID, WoodyCtx) ->
     {ok, value()}.
 
 get_next(SequenceID, WoodyCtx) ->
+    get_next(SequenceID, ?initial_value, WoodyCtx).
+
+-spec get_next(id(), minimum(), woody_context()) ->
+    {ok, value()}.
+
+get_next(SequenceID, undefined, WoodyCtx) ->
+    get_next(SequenceID, ?initial_value, WoodyCtx);
+get_next(SequenceID, Minimum, WoodyCtx) ->
     ok = ensure_started(SequenceID, WoodyCtx),
-    call(SequenceID, get_next, WoodyCtx).
+    call(SequenceID, {get_next, Minimum}, WoodyCtx).
 
 %%% Machinery callbacks
 
@@ -68,13 +79,13 @@ init([], _Machine, _HandlerArgs, _HandlerOpts) ->
         }
     }.
 
--spec process_call(args(get_next | any()), machine(), handler_args(), handler_opts()) ->
+-spec process_call(args({get_next, integer()} | any()), machine(), handler_args(), handler_opts()) ->
     {response(value()), result(state())} | no_return().
 
-process_call(get_next, Machine, _HandlerArgs, _HandlerOpts) ->
+process_call({get_next, Minimum}, Machine, _HandlerArgs, _HandlerOpts) ->
     State    = get_machine_state(Machine),
     Value    = get_value(State),
-    NewValue = Value + 1,
+    NewValue = erlang:max(Value + 1, Minimum),
     NewState = set_value(State, NewValue),
     {NewValue, #{aux_state => NewState}};
 
