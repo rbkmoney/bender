@@ -65,16 +65,8 @@ groups() ->
     config().
 
 init_per_suite(C) ->
-    Apps = genlib_app:start_application_with(lager, [
-        {async_threshold, 1},
-        {async_threshold_window, 0},
-        {error_logger_hwm, 600},
-        {suppress_application_start_stop, true},
-        {handlers, [
-            {lager_common_test_backend, [error, {lager_logstash_formatter, []}]}
-        ]}
-    ]) ++ genlib_app:start_application_with(scoper, [
-        {storage, scoper_storage_lager}
+    Apps = genlib_app:start_application_with(scoper, [
+        {storage, scoper_storage_logger}
     ]) ++ genlib_app:start_application_with(bender, [
         {generator, #{
             path          => <<"/v1/stateproc/bender_generator">>,
