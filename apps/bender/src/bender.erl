@@ -60,7 +60,11 @@ init([]) ->
             port              => get_port(),
             protocol_opts     => get_protocol_opts(),
             transport_opts    => get_transport_opts(),
-            event_handler     => scoper_woody_event_handler,
+            shutdown_timeout  => get_shutdown_timeout(),
+            event_handler     => [
+                scoper_woody_event_handler,
+                hay_woody_event_handler
+            ],
             handlers          => [get_handler_spec()],
             additional_routes => get_routes()
         }
@@ -94,6 +98,12 @@ get_protocol_opts() ->
 
 get_transport_opts() ->
     genlib_app:env(?MODULE, transport_opts, #{}).
+
+-spec get_shutdown_timeout() ->
+    timeout().
+
+get_shutdown_timeout() ->
+    genlib_app:env(?MODULE, shutdown_timeout, 0).
 
 -spec get_handler_spec() ->
     woody:http_handler(woody:th_handler()).

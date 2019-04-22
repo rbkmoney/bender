@@ -6,7 +6,7 @@
 -type woody_context() :: woody_context:ctx().
 
 -type schema()        :: machinery_mg_schema_generic | atom().
--type event_handler() :: scoper_woody_event_handler | atom().
+-type event_handler() :: woody:ev_handler() | [woody:ev_handler()].
 
 -type automaton() :: #{
     url            := binary(), % machinegun's automaton url
