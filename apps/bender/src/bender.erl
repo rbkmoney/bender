@@ -61,7 +61,10 @@ init([]) ->
             protocol_opts     => get_protocol_opts(),
             transport_opts    => get_transport_opts(),
             shutdown_timeout  => get_shutdown_timeout(),
-            event_handler     => scoper_woody_event_handler,
+            event_handler     => [
+                scoper_woody_event_handler,
+                hay_woody_event_handler
+            ],
             handlers          => [get_handler_spec()],
             additional_routes => get_routes()
         }

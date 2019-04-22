@@ -5,6 +5,7 @@
     {applications, [
         kernel,
         stdlib,
+        how_are_you,
         woody,
         scoper,
         bender_proto,
