@@ -34,7 +34,7 @@
  {<<"jsx">>,{pkg,<<"jsx">>,<<"2.8.0">>},1},
  {<<"logger_logstash_formatter">>,
   {git,"git@github.com:rbkmoney/logger_logstash_formatter.git",
-       {ref,"b148e80de2573b0bf91bb4563ad331498e1c6ef4"}},
+       {ref,"17eaad7940c8df5a8c511388c6063bb049bab3d2"}},
   0},
  {<<"machinery">>,
   {git,"git@github.com:rbkmoney/machinery.git",
