@@ -121,7 +121,10 @@ get_handler_spec() ->
 
 get_routes() ->
     RouteOptsEnv = genlib_app:env(?MODULE, route_opts, #{}),
-    RouteOpts = RouteOptsEnv#{event_handler => scoper_woody_event_handler},
+    RouteOpts = RouteOptsEnv#{event_handler => [
+        scoper_woody_event_handler,
+        hay_woody_event_handler
+    ]},
     Generator = genlib_app:env(bender, generator, #{}),
     Sequence = genlib_app:env(bender, sequence, #{}),
     Handlers = [
