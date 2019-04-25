@@ -121,7 +121,7 @@ get_backend(WoodyCtx) ->
 not_implemented(What) ->
     erlang:error({not_implemented, What}).
 
--spec generate(schema(), woody_context()) ->
+-spec generate(schema() | internal_id(), woody_context()) ->
     internal_id().
 
 generate(InternalID, _WoodyCtx) when is_binary(InternalID) ->
