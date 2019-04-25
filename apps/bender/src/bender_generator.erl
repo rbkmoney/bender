@@ -15,7 +15,7 @@
 
 -type external_id()  :: binary().
 -type internal_id()  :: binary().
--type schema()       :: bender:schema().
+-type schema()       :: bender:schema() | internal_id().
 -type user_context() :: msgpack_thrift:'Value'() | undefined.
 -type state()        :: #{
     internal_id  := internal_id(),
@@ -40,9 +40,10 @@
     {ok, internal_id(), user_context()} | no_return().
 
 bind(ExternalID, Schema, UserCtx, WoodyCtx) ->
-    case start(ExternalID, Schema, UserCtx, WoodyCtx) of
+    InternalID = generate(Schema, WoodyCtx),
+    Schema2 = #constant{internal_id = InternalID}, % FIXME: remove this after rollout
+    case start(ExternalID, Schema2, UserCtx, WoodyCtx) of
         ok ->
-            {ok, InternalID, _} = get(ExternalID, WoodyCtx),
             {ok, InternalID, undefined};
         {error, exists} ->
             get(ExternalID, WoodyCtx)
@@ -121,15 +122,18 @@ get_backend(WoodyCtx) ->
 not_implemented(What) ->
     erlang:error({not_implemented, What}).
 
--spec generate(schema(), handler_opts()) ->
+-spec generate(schema(), woody_context()) ->
     internal_id().
 
-generate(snowflake, _HandlerOpts) ->
-    bender_utils:unique_id();
-
-generate(#constant{internal_id = InternalID}, _HandlerOpts) ->
+generate(InternalID, _WoodyCtx) when is_binary(InternalID) ->
     InternalID;
 
-generate(#sequence{id = SequenceID, minimum = Minimum}, #{woody_ctx := WoodyCtx}) ->
+generate(snowflake, _WoodyCtx) ->
+    bender_utils:unique_id();
+
+generate(#constant{internal_id = InternalID}, _WoodyCtx) ->
+    InternalID;
+
+generate(#sequence{id = SequenceID, minimum = Minimum}, WoodyCtx) ->
     {ok, Value} = bender_sequence:get_next(SequenceID, Minimum, WoodyCtx),
     integer_to_binary(Value).
