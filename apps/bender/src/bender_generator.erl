@@ -15,7 +15,7 @@
 
 -type external_id()  :: binary().
 -type internal_id()  :: binary().
--type schema()       :: bender:schema() | internal_id().
+-type schema()       :: bender:schema().
 -type user_context() :: msgpack_thrift:'Value'() | undefined.
 -type state()        :: #{
     internal_id  := internal_id(),
@@ -122,7 +122,7 @@ get_backend(WoodyCtx) ->
 not_implemented(What) ->
     erlang:error({not_implemented, What}).
 
--spec generate(schema(), woody_context()) ->
+-spec generate(schema() | internal_id(), woody_context()) ->
     internal_id().
 
 generate(InternalID, _WoodyCtx) when is_binary(InternalID) ->
