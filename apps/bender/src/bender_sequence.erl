@@ -34,10 +34,14 @@
 -type state() :: #{
     value := value()
 }.
+-type init_args() :: #{
+    initial_value => value()
+}.
 
 -define(NS, bender_sequence).
 
 -define(initial_value, 0).
+-define(default_initial_value, 1).
 
 %%% API
 
@@ -69,13 +73,19 @@ get_next(SequenceID, Minimum, WoodyCtx) ->
 
 %%% Machinery callbacks
 
--spec init(args([]), machine(), handler_args(), handler_opts()) ->
+-spec init(args([] | init_args()), machine(), handler_args(), handler_opts()) ->
     result(state()).
 
-init([], _Machine, _HandlerArgs, _HandlerOpts) ->
+init([], _Machine, _HandlerArgs, _HandlerOpts) -> % FIXME: remove this after rollout
     #{
         aux_state => #{
             value => ?initial_value
+        }
+    };
+init(Args, _Machine, _HandlerArgs, _HandlerOpts) ->
+    #{
+        aux_state => #{
+            value => maps:get(initial_value, Args, ?default_initial_value)
         }
     }.
 
