@@ -54,8 +54,8 @@ bind(ExternalID, Schema, UserCtx, WoodyCtx) ->
 -spec init(args({schema(), user_context()}), machine(), handler_args(), handler_opts()) ->
     result(state()).
 
-init({Schema, UserCtx}, _Machine, _HandlerArgs, HandlerOpts) ->
-    InternalID = generate(Schema, HandlerOpts),
+init({Schema, UserCtx}, _Machine, _HandlerArgs, #{woody_ctx := WoodyCtx}) ->
+    InternalID = generate(Schema, WoodyCtx),
     #{
         aux_state => #{
             internal_id  => InternalID,
