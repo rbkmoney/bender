@@ -34,10 +34,14 @@
 -type state() :: #{
     value := value()
 }.
+-type init_args() :: #{
+    initial_value => value()
+}.
 
 -define(NS, bender_sequence).
 
 -define(initial_value, 0).
+-define(default_initial_value, 1).
 
 %%% API
 
@@ -56,26 +60,37 @@ get_current(SequenceID, WoodyCtx) ->
     {ok, value()}.
 
 get_next(SequenceID, WoodyCtx) ->
-    get_next(SequenceID, ?initial_value, WoodyCtx).
+    get_next(SequenceID, ?default_initial_value, WoodyCtx).
 
 -spec get_next(id(), minimum(), woody_context()) ->
     {ok, value()}.
 
 get_next(SequenceID, undefined, WoodyCtx) ->
-    get_next(SequenceID, ?initial_value, WoodyCtx);
+    get_next(SequenceID, ?default_initial_value, WoodyCtx);
 get_next(SequenceID, Minimum, WoodyCtx) ->
-    ok = ensure_started(SequenceID, WoodyCtx),
-    call(SequenceID, {get_next, Minimum}, WoodyCtx).
+    Args = #{initial_value => Minimum},
+    case start(SequenceID, Args, WoodyCtx) of
+        ok ->
+            {ok, Minimum};
+        {error, exists} ->
+            call(SequenceID, {get_next, Minimum}, WoodyCtx)
+    end.
 
 %%% Machinery callbacks
 
--spec init(args([]), machine(), handler_args(), handler_opts()) ->
+-spec init(args([] | init_args()), machine(), handler_args(), handler_opts()) ->
     result(state()).
 
-init([], _Machine, _HandlerArgs, _HandlerOpts) ->
+init([], _Machine, _HandlerArgs, _HandlerOpts) -> % FIXME: remove this after rollout
     #{
         aux_state => #{
             value => ?initial_value
+        }
+    };
+init(Args, _Machine, _HandlerArgs, _HandlerOpts) ->
+    #{
+        aux_state => #{
+            value => maps:get(initial_value, Args, ?default_initial_value)
         }
     }.
 
@@ -106,22 +121,11 @@ process_repair(_Args, _Machine, _HandlerArgs, _HandlerOpts) ->
 
 %%% Internal functions
 
--spec start(id(), woody_context()) ->
+-spec start(id(), init_args(), woody_context()) ->
     ok | {error, exists}.
 
-start(SequenceID, WoodyCtx) ->
-    machinery:start(?NS, SequenceID, [], get_backend(WoodyCtx)).
-
--spec ensure_started(id(), woody_context()) ->
-    ok | no_return().
-
-ensure_started(SequenceID, WoodyCtx) ->
-    case start(SequenceID, WoodyCtx) of
-        ok ->
-            ok;
-        {error, exists} ->
-            ok
-    end.
+start(SequenceID, Args, WoodyCtx) ->
+    machinery:start(?NS, SequenceID, Args, get_backend(WoodyCtx)).
 
 -spec call(id(), args(_), woody_context()) ->
     {ok, response(_)} | {error, notfound}.
