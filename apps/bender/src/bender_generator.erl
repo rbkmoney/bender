@@ -41,8 +41,7 @@
 
 bind(ExternalID, Schema, UserCtx, WoodyCtx) ->
     InternalID = generate(Schema, WoodyCtx),
-    Schema2 = #constant{internal_id = InternalID}, % FIXME: remove this after rollout
-    case start(ExternalID, Schema2, UserCtx, WoodyCtx) of
+    case start(ExternalID, InternalID, UserCtx, WoodyCtx) of
         ok ->
             {ok, InternalID, undefined};
         {error, exists} ->
@@ -51,7 +50,7 @@ bind(ExternalID, Schema, UserCtx, WoodyCtx) ->
 
 %%% Machinery callbacks
 
--spec init(args({schema(), user_context()}), machine(), handler_args(), handler_opts()) ->
+-spec init(args({schema() | internal_id(), user_context()}), machine(), handler_args(), handler_opts()) ->
     result(state()).
 
 init({Schema, UserCtx}, _Machine, _HandlerArgs, #{woody_ctx := WoodyCtx}) ->
@@ -83,11 +82,11 @@ process_repair(_Args, _Machine, _HandlerArgs, _HandlerOpts) ->
 
 %%% Internal functions
 
--spec start(external_id(), schema(), user_context(), woody_context()) ->
+-spec start(external_id(), internal_id(), user_context(), woody_context()) ->
     ok | {error, exists}.
 
-start(ExternalID, Schema, UserCtx, WoodyCtx) ->
-    machinery:start(?NS, ExternalID, {Schema, UserCtx}, get_backend(WoodyCtx)).
+start(ExternalID, InternalID, UserCtx, WoodyCtx) ->
+    machinery:start(?NS, ExternalID, {InternalID, UserCtx}, get_backend(WoodyCtx)).
 
 -spec get(external_id(), woody_context()) ->
     {ok, internal_id(), user_context()} | no_return().
