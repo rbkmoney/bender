@@ -50,11 +50,10 @@ bind(ExternalID, Schema, UserCtx, WoodyCtx) ->
 
 %%% Machinery callbacks
 
--spec init(args({schema() | internal_id(), user_context()}), machine(), handler_args(), handler_opts()) ->
+-spec init(args({internal_id(), user_context()}), machine(), handler_args(), handler_opts()) ->
     result(state()).
 
-init({Schema, UserCtx}, _Machine, _HandlerArgs, #{woody_ctx := WoodyCtx}) ->
-    InternalID = generate(Schema, WoodyCtx),
+init({InternalID, UserCtx}, _Machine, _HandlerArgs, _HandlerOpts) ->
     #{
         aux_state => #{
             internal_id  => InternalID,
@@ -121,11 +120,8 @@ get_backend(WoodyCtx) ->
 not_implemented(What) ->
     erlang:error({not_implemented, What}).
 
--spec generate(schema() | internal_id(), woody_context()) ->
+-spec generate(schema(), woody_context()) ->
     internal_id().
-
-generate(InternalID, _WoodyCtx) when is_binary(InternalID) ->
-    InternalID;
 
 generate(snowflake, _WoodyCtx) ->
     bender_utils:unique_id();

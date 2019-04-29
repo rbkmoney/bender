@@ -40,7 +40,6 @@
 
 -define(NS, bender_sequence).
 
--define(initial_value, 0).
 -define(default_initial_value, 1).
 
 %%% API
@@ -78,15 +77,9 @@ get_next(SequenceID, Minimum, WoodyCtx) ->
 
 %%% Machinery callbacks
 
--spec init(args([] | init_args()), machine(), handler_args(), handler_opts()) ->
+-spec init(args(init_args()), machine(), handler_args(), handler_opts()) ->
     result(state()).
 
-init([], _Machine, _HandlerArgs, _HandlerOpts) -> % FIXME: remove this after rollout
-    #{
-        aux_state => #{
-            value => ?initial_value
-        }
-    };
 init(Args, _Machine, _HandlerArgs, _HandlerOpts) ->
     #{
         aux_state => #{
