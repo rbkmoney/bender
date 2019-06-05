@@ -264,7 +264,8 @@ generator_init(_C) ->
     },
     {ok, _Result} = woody_client:call(Call, Options).
 
--spec(retreive_unknown_id(config()) -> ok).
+-spec retreive_unknown_id(config()) ->
+    ok.
 
 retreive_unknown_id(C) ->
     Client     = get_client(C),
