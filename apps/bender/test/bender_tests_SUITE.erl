@@ -62,7 +62,7 @@ groups() ->
         {contention, [{repeat_until_all_ok, 10}], [
             contention
         ]},
-        {retreive_id, [
+        {retreive_id, [parallel], [
             retreive_unknown_id,
             retreive_known_id
         ]}
