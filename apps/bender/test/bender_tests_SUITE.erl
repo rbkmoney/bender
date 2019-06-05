@@ -284,8 +284,8 @@ retreive_known_id(C) ->
     ExternalID = bender_utils:unique_id(),
     InternalID = bender_utils:unique_id(),
     Schema     = {constant, #bender_ConstantSchema{internal_id = InternalID}},
-    UserCtx    = undefined,
-    InternalID = generate_strict(ExternalID, Schema, UserCtx, Client),
+    UserCtx    = {bin, <<"get internal id test">>},
+    InternalID = generate_weak(ExternalID, Schema, UserCtx, Client),
 
     #bender_GetInternalIDResult{internal_id = InternalID} =
         bender_client:get_internal_id(ExternalID, Client),
