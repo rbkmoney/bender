@@ -80,14 +80,6 @@ process_timeout(_Machine, _HandlerArgs, _HandlerOpts) ->
 process_repair(_Args, _Machine, _HandlerArgs, _HandlerOpts) ->
     not_implemented(repair).
 
-%%% Internal functions
-
--spec start(external_id(), internal_id(), user_context(), woody_context()) ->
-    ok | {error, exists}.
-
-start(ExternalID, InternalID, UserCtx, WoodyCtx) ->
-    machinery:start(?NS, ExternalID, {InternalID, UserCtx}, get_backend(WoodyCtx)).
-
 -spec get_internal_id(external_id(), woody_context()) ->
     {ok, internal_id(), user_context()} | no_return().
 
@@ -102,6 +94,14 @@ get_internal_id(ExternalID, WoodyCtx) ->
         {error, notfound} ->
             throw({not_found, ExternalID})
     end.
+
+%%% Internal functions
+
+-spec start(external_id(), internal_id(), user_context(), woody_context()) ->
+    ok | {error, exists}.
+
+start(ExternalID, InternalID, UserCtx, WoodyCtx) ->
+    machinery:start(?NS, ExternalID, {InternalID, UserCtx}, get_backend(WoodyCtx)).
 
 -spec get_machine_state(machine()) ->
     state().
