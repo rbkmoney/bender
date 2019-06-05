@@ -32,7 +32,22 @@ handle_function_('GenerateID', [ExternalID, Schema, UserCtx], WoodyCtx, _Opts) -
     scoper:add_meta(#{
         external_id => ExternalID
     }),
-    generate_id(ExternalID, Schema, UserCtx, WoodyCtx).
+    generate_id(ExternalID, Schema, UserCtx, WoodyCtx);
+
+handle_function_('GetInternalID', [ExternalID], WoodyCtx, _Opts) ->
+    scoper:add_meta(#{
+        external_id => ExternalID
+    }),
+    try
+        {ok, InternalID, _UserCtx} = bender_generator:get(ExternalID, WoodyCtx),
+        Result = #bender_GetInternalIDResult{
+            internal_id = InternalID
+        },
+        {ok, Result}
+    catch
+        throw:{not_found, ExternalID} ->
+            throw(#bender_InternalIDNotFound{})
+    end.
 
 -spec generate_id(external_id(), bender_thrift:'GenerationSchema'(), user_context(), woody_context()) ->
     {ok, result()} | no_return().

@@ -3,6 +3,7 @@
 %% API
 
 -export([bind/4]).
+-export([get/2]).
 
 %% Machinery callbacks
 

@@ -18,6 +18,8 @@
 -export([contention/1]).
 
 -export([generator_init/1]).
+-export([retreive_unknown_id/1]).
+-export([retreive_known_id/1]).
 
 -include_lib("bender_proto/include/bender_thrift.hrl").
 
@@ -33,7 +35,8 @@
 all() ->
     [
         {group, main},
-        {group, contention}
+        {group, contention},
+        {group, retreive_id}
     ].
 
 -define(parallel_workers, 100).
@@ -58,6 +61,10 @@ groups() ->
         {generator_init, [parallel], [ generator_init || _ <- lists:seq(1, ?parallel_workers) ]},
         {contention, [{repeat_until_all_ok, 10}], [
             contention
+        ]},
+        {retreive_id, [
+            retreive_unknown_id,
+            retreive_known_id
         ]}
     ].
 
@@ -256,6 +263,33 @@ generator_init(_C) ->
         }
     },
     {ok, _Result} = woody_client:call(Call, Options).
+
+-spec(retreive_unknown_id(config()) -> ok).
+
+retreive_unknown_id(C) ->
+    Client     = get_client(C),
+    ExternalID = bender_utils:unique_id(),
+    try
+        {ok, _InternalID} = bender_client:get_internal_id(ExternalID, Client),
+        error(found)
+    catch
+        throw:#bender_InternalIDNotFound{} ->
+            ok
+    end.
+
+-spec(retreive_known_id(config()) -> ok).
+
+retreive_known_id(C) ->
+    Client     = get_client(C),
+    ExternalID = bender_utils:unique_id(),
+    InternalID = bender_utils:unique_id(),
+    Schema     = {constant, #bender_ConstantSchema{internal_id = InternalID}},
+    UserCtx    = undefined,
+    InternalID = generate_strict(ExternalID, Schema, UserCtx, Client),
+
+    #bender_GetInternalIDResult{internal_id = InternalID} =
+        bender_client:get_internal_id(ExternalID, Client),
+    ok.
 
 %%%
 

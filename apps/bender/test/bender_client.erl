@@ -2,6 +2,7 @@
 
 -export([new/0]).
 -export([generate_id/4]).
+-export([get_internal_id/2]).
 
 -type client() :: woody_context:ctx().
 
@@ -24,6 +25,12 @@ new() ->
 
 generate_id(ExternalID, Schema, UserCtx, Client) ->
     call('GenerateID', [ExternalID, Schema, UserCtx], Client).
+
+-spec get_internal_id(external_id(), client()) ->
+    woody:result() | no_return().
+
+get_internal_id(ExternalID, Client) ->
+    call('GetInternalID', [ExternalID], Client).
 
 %%% Internal functions
 
