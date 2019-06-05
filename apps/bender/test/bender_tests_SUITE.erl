@@ -277,7 +277,8 @@ retreive_unknown_id(C) ->
             ok
     end.
 
--spec(retreive_known_id(config()) -> ok).
+-spec retreive_known_id(config()) ->
+    ok.
 
 retreive_known_id(C) ->
     Client     = get_client(C),
