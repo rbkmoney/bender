@@ -77,7 +77,7 @@ bind(ExternalID, Schema, UserCtx, WoodyCtx) ->
 
 get_internal_id(ExternalID, WoodyCtx) ->
     try
-        {ok, InternalID, UserCtx} = bender_generator:get(ExternalID, WoodyCtx),
+        {ok, InternalID, UserCtx} = bender_generator:get_internal_id(ExternalID, WoodyCtx),
         Result = #bender_GetInternalIDResult{
             internal_id = InternalID,
             context = UserCtx
