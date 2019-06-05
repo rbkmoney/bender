@@ -49,6 +49,21 @@ bind(ExternalID, Schema, UserCtx, WoodyCtx) ->
             get_internal_id(ExternalID, WoodyCtx)
     end.
 
+-spec get_internal_id(external_id(), woody_context()) ->
+    {ok, internal_id(), user_context()} | no_return().
+
+get_internal_id(ExternalID, WoodyCtx) ->
+    case machinery:get(?NS, ExternalID, get_backend(WoodyCtx)) of
+        {ok, Machine} ->
+            #{
+                internal_id  := InternalID,
+                user_context := UserCtx
+            } = get_machine_state(Machine),
+            {ok, InternalID, UserCtx};
+        {error, notfound} ->
+            throw({not_found, ExternalID})
+    end.
+
 %%% Machinery callbacks
 
 -spec init(args({internal_id(), user_context()}), machine(), handler_args(), handler_opts()) ->
@@ -79,21 +94,6 @@ process_timeout(_Machine, _HandlerArgs, _HandlerOpts) ->
 
 process_repair(_Args, _Machine, _HandlerArgs, _HandlerOpts) ->
     not_implemented(repair).
-
--spec get_internal_id(external_id(), woody_context()) ->
-    {ok, internal_id(), user_context()} | no_return().
-
-get_internal_id(ExternalID, WoodyCtx) ->
-    case machinery:get(?NS, ExternalID, get_backend(WoodyCtx)) of
-        {ok, Machine} ->
-            #{
-                internal_id  := InternalID,
-                user_context := UserCtx
-            } = get_machine_state(Machine),
-            {ok, InternalID, UserCtx};
-        {error, notfound} ->
-            throw({not_found, ExternalID})
-    end.
 
 %%% Internal functions
 
