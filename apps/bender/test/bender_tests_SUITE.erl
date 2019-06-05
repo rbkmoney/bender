@@ -287,7 +287,7 @@ retreive_known_id(C) ->
     UserCtx    = {bin, <<"get internal id test">>},
     InternalID = generate_weak(ExternalID, Schema, UserCtx, Client),
 
-    #bender_GetInternalIDResult{internal_id = InternalID} =
+    #bender_GetInternalIDResult{internal_id = InternalID, context = UserCtx} =
         bender_client:get_internal_id(ExternalID, Client),
     ok.
 
