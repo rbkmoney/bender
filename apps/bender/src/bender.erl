@@ -138,6 +138,16 @@ get_routes() ->
             }
         }}
     ],
-    HealthCheckers = genlib_app:env(?MODULE, health_checkers, []),
-    [erl_health_handle:get_route(HealthCheckers) |
+    Check = enable_health_logging(genlib_app:env(?MODULE, health_check, #{})),
+    [erl_health_handle:get_route(Check) |
      machinery_mg_backend:get_routes(Handlers, RouteOpts)].
+
+-spec enable_health_logging(erl_health:check()) ->
+    erl_health:check().
+
+enable_health_logging(Check) ->
+    EvHandler = {erl_health_event_handler, []},
+    maps:map(
+        fun (_, Runner) -> #{runner => Runner, event_handler => EvHandler} end,
+        Check
+    ).
