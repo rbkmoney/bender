@@ -249,7 +249,7 @@ generator_init(_C) ->
             id = <<"42">>,
             history = [],
             history_range = #mg_stateproc_HistoryRange{},
-            aux_state = {bin, <<>>},
+            aux_state = #mg_stateproc_Content{data = {bin, <<>>}},
             timer = undefined
         }
     },
