@@ -2,6 +2,7 @@
 
 -export([unique_id/0]).
 -export([get_backend/2]).
+-export([get_woody_event_handlers/0]).
 
 -type woody_context() :: woody_context:ctx().
 
@@ -40,9 +41,18 @@ get_backend(Service, WoodyCtx) ->
 -spec get_woody_client(automaton()) ->
     machinery_mg_client:woody_client().
 
-get_woody_client(#{url := Url, event_handler := Handler} = Automaton) ->
+get_woody_client(#{url := Url} = Automaton) ->
     genlib_map:compact(#{
         url => Url,
-        event_handler => Handler,
+        event_handler => get_woody_event_handlers(),
         transport_opts => maps:get(transport_opts, Automaton, undefined)
     }).
+
+-spec get_woody_event_handlers() ->
+    woody:ev_handlers().
+
+get_woody_event_handlers() ->
+    genlib_app:env(bender, woody_event_handlers, [
+        scoper_woody_event_handler,
+        hay_woody_event_handler
+    ]).

@@ -53,6 +53,7 @@ stop(_State) ->
     {ok, {supervisor:sup_flags(), [supervisor:child_spec()]}}.
 
 init([]) ->
+    EventHandlers = bender_utils:get_woody_event_handlers(),
     ChildSpec = woody_server:child_spec(
         ?MODULE,
         #{
@@ -61,12 +62,9 @@ init([]) ->
             protocol_opts     => get_protocol_opts(),
             transport_opts    => get_transport_opts(),
             shutdown_timeout  => get_shutdown_timeout(),
-            event_handler     => [
-                scoper_woody_event_handler,
-                hay_woody_event_handler
-            ],
+            event_handler     => EventHandlers,
             handlers          => [get_handler_spec()],
-            additional_routes => get_routes()
+            additional_routes => get_routes(EventHandlers)
         }
     ),
     {ok, {
@@ -116,12 +114,12 @@ get_handler_spec() ->
         bender_handler
     }}.
 
--spec get_routes() ->
+-spec get_routes(woody:ev_handlers()) ->
     [woody_server_thrift_http_handler:route(_)].
 
-get_routes() ->
+get_routes(EventHandlers) ->
     RouteOptsEnv = genlib_app:env(?MODULE, route_opts, #{}),
-    RouteOpts = RouteOptsEnv#{event_handler => scoper_woody_event_handler},
+    RouteOpts = RouteOptsEnv#{event_handler => EventHandlers},
     Generator = genlib_app:env(bender, generator, #{}),
     Sequence = genlib_app:env(bender, sequence, #{}),
     Handlers = [

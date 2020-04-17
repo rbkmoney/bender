@@ -1,6 +1,7 @@
 service_name: machinegun
 
-snowflake_machine_id: 1
+erlang:
+    secret_cookie_file: "/opt/machinegun/etc/cookie"
 
 namespaces:
     bender_generator:
