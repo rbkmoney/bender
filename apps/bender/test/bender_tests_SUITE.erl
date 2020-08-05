@@ -186,11 +186,11 @@ different_schemas(C) ->
     ExternalID = bender_utils:unique_id(),
     Schema1    = {sequence, #bender_SequenceSchema{sequence_id = bender_utils:unique_id()}},
     UserCtx    = {bin, <<"wo bist do">>},
-    Generated  = generate_weak(ExternalID, Schema1, UserCtx, Client),
+    Binding  = generate_weak(ExternalID, Schema1, UserCtx, Client),
     Schema2    = {snowflake, #bender_SnowflakeSchema{}},
-    Generated  = generate_strict(ExternalID, Schema2, UserCtx, Client),
+    Binding  = generate_strict(ExternalID, Schema2, UserCtx, Client),
     Schema3    = {constant, #bender_ConstantSchema{internal_id = bender_utils:unique_id()}},
-    Generated  = generate_strict(ExternalID, Schema3, UserCtx, Client),
+    Binding  = generate_strict(ExternalID, Schema3, UserCtx, Client),
     ok.
 
 -spec contention(config()) ->
@@ -216,8 +216,8 @@ contention(C) ->
         fun({Schema, UserCtx}) ->
             Client = get_client(C),
             UserCtx1 = {bin, term_to_binary({Schema, UserCtx})},
-            {Generated, PrevUserCtx} = generate(ExternalID, Schema, UserCtx1, Client),
-            {{ExternalID, Generated, PrevUserCtx}, {Schema, UserCtx}}
+            {Binding, PrevUserCtx} = generate(ExternalID, Schema, UserCtx1, Client),
+            {{ExternalID, Binding, PrevUserCtx}, {Schema, UserCtx}}
         end,
     Result = genlib_pmap:map(Generate, shuffle(Data)),
     [
@@ -225,8 +225,8 @@ contention(C) ->
         % but record is actually stored in machinegun, winner retries it's request and
         % receives response with user context already stored before, not undefined.
         % So we just repeat this test until ok or maximum number of retries reached
-        {{ExternalID, Generated, undefined}, UserCtxOfWinner},
-        {{ExternalID, Generated, {bin, BinaryCtx}}, _OtherUserCtx}
+        {{ExternalID, Binding, undefined}, UserCtxOfWinner},
+        {{ExternalID, Binding, {bin, BinaryCtx}}, _OtherUserCtx}
     ] = lists:ukeysort(1, Result),
     UserCtxOfWinner = binary_to_term(BinaryCtx),
     ok.
@@ -313,15 +313,15 @@ generate(ExternalID, Schema, UserCtx, Client) ->
     end.
 
 generate_strict(ExternalID, Schema, UserCtx, Client) ->
-    {Generated, UserCtx} = generate(ExternalID, Schema, UserCtx, Client),
-    Generated.
+    {Binding, UserCtx} = generate(ExternalID, Schema, UserCtx, Client),
+    Binding.
 
 generate_weak(ExternalID, Schema, UserCtx, Client) ->
     case generate(ExternalID, Schema, UserCtx, Client) of
-        {Generated, undefined} ->
-            Generated;
-        {Generated, UserCtx} ->
-            Generated
+        {Binding, undefined} ->
+            Binding;
+        {Binding, UserCtx} ->
+            Binding
     end.
 
 shuffle(L) ->
