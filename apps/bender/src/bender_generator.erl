@@ -18,11 +18,15 @@
 -type internal_id()         :: binary().
 -type integer_internal_id() :: pos_integer().
 
+-type generated() :: internal_id()
+                   | {internal_id(), integer_internal_id()}.
+
 -type schema()       :: bender:schema().
 -type user_context() :: msgpack_thrift:'Value'() | undefined.
 -type state()        :: #{
     internal_id  := internal_id(),
-    user_context := user_context()
+    user_context := user_context(),
+    integer_internal_id => integer_internal_id()
 }.
 
 -type woody_context() :: woody_context:ctx().
@@ -40,37 +44,42 @@
 %%% API
 
 -spec bind(external_id(), schema(), user_context(), woody_context()) ->
-    {ok, internal_id(), user_context()} | no_return().
+    {ok, generated(), user_context()} | no_return().
 
 bind(ExternalID, Schema, UserCtx, WoodyCtx) ->
-    InternalID = generate(Schema, WoodyCtx),
-    case start(ExternalID, InternalID, UserCtx, WoodyCtx) of
+    Generated = generate(Schema, WoodyCtx),
+    case start(ExternalID, Generated, UserCtx, WoodyCtx) of
         ok ->
-            {ok, InternalID, undefined};
+            {ok, Generated, undefined};
         {error, exists} ->
             get_internal_id(ExternalID, WoodyCtx)
     end.
 
 -spec get_internal_id(external_id(), woody_context()) ->
-    {ok, internal_id(), user_context()} | no_return().
+    {ok, generated(), user_context()} | no_return().
 
 get_internal_id(ExternalID, WoodyCtx) ->
     case machinery:get(?NS, ExternalID, get_backend(WoodyCtx)) of
         {ok, Machine} ->
-            #{
-                internal_id  := InternalID,
-                user_context := UserCtx
-            } = get_machine_state(Machine),
-            {ok, InternalID, UserCtx};
+            State = get_machine_state(Machine),
+            {ok, get_generated(State), get_user_context(State)};
         {error, notfound} ->
             throw({not_found, ExternalID})
     end.
 
 %%% Machinery callbacks
 
--spec init(args({internal_id(), user_context()}), machine(), handler_args(), handler_opts()) ->
+-spec init(args({generated(), user_context()}), machine(), handler_args(), handler_opts()) ->
     result(state()).
 
+init({{InternalID, IntegerInternalID}, UserCtx}, _Machine, _HandlerArgs, _HandlerOpts) ->
+    #{
+        aux_state => #{
+            internal_id  => InternalID,
+            user_context => UserCtx,
+            integer_internal_id => IntegerInternalID
+        }
+    };
 init({InternalID, UserCtx}, _Machine, _HandlerArgs, _HandlerOpts) ->
     #{
         aux_state => #{
@@ -99,17 +108,37 @@ process_repair(_Args, _Machine, _HandlerArgs, _HandlerOpts) ->
 
 %%% Internal functions
 
--spec start(external_id(), internal_id(), user_context(), woody_context()) ->
+-spec start(external_id(), generated(), user_context(), woody_context()) ->
     ok | {error, exists}.
 
-start(ExternalID, InternalID, UserCtx, WoodyCtx) ->
-    machinery:start(?NS, ExternalID, {InternalID, UserCtx}, get_backend(WoodyCtx)).
+start(ExternalID, Generated, UserCtx, WoodyCtx) ->
+    machinery:start(?NS, ExternalID, {Generated, UserCtx}, get_backend(WoodyCtx)).
 
 -spec get_machine_state(machine()) ->
     state().
 
 get_machine_state(#{aux_state := State}) ->
     State.
+
+-spec get_generated(state()) ->
+    generated().
+
+get_generated(#{
+    internal_id := InternalID,
+    integer_internal_id := IntegerInternalID
+}) ->
+    {InternalID, IntegerInternalID};
+
+get_generated(#{
+    internal_id := InternalID
+}) ->
+    InternalID.
+
+-spec get_user_context(state()) ->
+    user_context().
+
+get_user_context(#{user_context := UserCtx}) ->
+    UserCtx.
 
 -spec get_backend(woody_context()) ->
     machinery_mg_backend:backend().
@@ -124,14 +153,16 @@ not_implemented(What) ->
     erlang:error({not_implemented, What}).
 
 -spec generate(schema(), woody_context()) ->
-    internal_id().
+    generated().
 
 generate(snowflake, _WoodyCtx) ->
-    bender_utils:unique_id();
+    <<IntegerID:64>> = snowflake:new(),
+    ID = genlib_format:format_int_base(IntegerID, 62),
+    {ID, IntegerID};
 
 generate(#constant{internal_id = InternalID}, _WoodyCtx) ->
     InternalID;
 
 generate(#sequence{id = SequenceID, minimum = Minimum}, WoodyCtx) ->
-    {ok, Value} = bender_sequence:get_next(SequenceID, Minimum, WoodyCtx),
-    integer_to_binary(Value).
+    {ok, IntegerID} = bender_sequence:get_next(SequenceID, Minimum, WoodyCtx),
+    {integer_to_binary(IntegerID), IntegerID}.
