@@ -18,8 +18,8 @@
 -export([contention/1]).
 
 -export([generator_init/1]).
--export([retreive_unknown_id/1]).
--export([retreive_known_id/1]).
+-export([retrieve_unknown_id/1]).
+-export([retrieve_known_id/1]).
 
 -include_lib("bender_proto/include/bender_thrift.hrl").
 
@@ -36,7 +36,7 @@ all() ->
     [
         {group, main},
         {group, contention},
-        {group, retreive_id}
+        {group, retrieve_id}
     ].
 
 -define(parallel_workers, 100).
@@ -62,9 +62,9 @@ groups() ->
         {contention, [{repeat_until_all_ok, 10}], [
             contention
         ]},
-        {retreive_id, [parallel], [
-            retreive_unknown_id,
-            retreive_known_id
+        {retrieve_id, [parallel], [
+            retrieve_unknown_id,
+            retrieve_known_id
         ]}
     ].
 
@@ -264,10 +264,10 @@ generator_init(_C) ->
     },
     {ok, _Result} = woody_client:call(Call, Options).
 
--spec retreive_unknown_id(config()) ->
+-spec retrieve_unknown_id(config()) ->
     ok.
 
-retreive_unknown_id(C) ->
+retrieve_unknown_id(C) ->
     Client     = get_client(C),
     ExternalID = bender_utils:unique_id(),
     try
@@ -278,10 +278,10 @@ retreive_unknown_id(C) ->
             ok
     end.
 
--spec retreive_known_id(config()) ->
+-spec retrieve_known_id(config()) ->
     ok.
 
-retreive_known_id(C) ->
+retrieve_known_id(C) ->
     Client     = get_client(C),
     ExternalID = bender_utils:unique_id(),
     InternalID = bender_utils:unique_id(),
