@@ -139,31 +139,31 @@ constant(C) ->
     ok.
 
 sequence(C) ->
-    Client     = get_client(C),
-    SequenceID = bender_utils:unique_id(),
-    ExternalID = bender_utils:unique_id(),
-    Schema     = {sequence, #bender_SequenceSchema{sequence_id = SequenceID}},
-    UserCtx    = {bin, <<"come to daddy">>},
-    <<"1">>    = generate_weak(ExternalID, Schema, UserCtx, Client),
-    OtherID    = bender_utils:unique_id(),
-    <<"2">>    = generate_weak(OtherID, Schema, UserCtx, Client),
-    <<"1">>    = generate_strict(ExternalID, Schema, UserCtx, Client),
+    Client       = get_client(C),
+    SequenceID   = bender_utils:unique_id(),
+    ExternalID   = bender_utils:unique_id(),
+    Schema       = {sequence, #bender_SequenceSchema{sequence_id = SequenceID}},
+    UserCtx      = {bin, <<"come to daddy">>},
+    {<<"1">>, 1} = generate_weak(ExternalID, Schema, UserCtx, Client),
+    OtherID      = bender_utils:unique_id(),
+    {<<"2">>, 2} = generate_weak(OtherID, Schema, UserCtx, Client),
+    {<<"1">>, 1} = generate_strict(ExternalID, Schema, UserCtx, Client),
     ok.
 
 -spec sequence_minimum(config()) ->
     ok.
 
 sequence_minimum(C) ->
-    Client     = get_client(C),
-    SequenceID = bender_utils:unique_id(),
-    Schema1    = {sequence, #bender_SequenceSchema{sequence_id = SequenceID}},
-    UserCtx    = {bin, <<"benutzerkontext">>},
-    <<"1">>    = generate_weak(bender_utils:unique_id(), Schema1, UserCtx, Client),
-    Schema2    = {sequence, #bender_SequenceSchema{sequence_id = SequenceID, minimum = 10}},
-    <<"10">>   = generate_weak(bender_utils:unique_id(), Schema2, UserCtx, Client),
-    OtherSeqID = bender_utils:unique_id(),
-    Schema3    = {sequence, #bender_SequenceSchema{sequence_id = OtherSeqID, minimum = 42}},
-    <<"42">>   = generate_weak(bender_utils:unique_id(), Schema3, UserCtx, Client),
+    Client       = get_client(C),
+    SequenceID   = bender_utils:unique_id(),
+    Schema1      = {sequence, #bender_SequenceSchema{sequence_id = SequenceID}},
+    UserCtx      = {bin, <<"benutzerkontext">>},
+    {<<"1">>, 1} = generate_weak(bender_utils:unique_id(), Schema1, UserCtx, Client),
+    Schema2      = {sequence, #bender_SequenceSchema{sequence_id = SequenceID, minimum = 4}},
+    {<<"4">>, 4} = generate_weak(bender_utils:unique_id(), Schema2, UserCtx, Client),
+    OtherSeqID   = bender_utils:unique_id(),
+    Schema3      = {sequence, #bender_SequenceSchema{sequence_id = OtherSeqID, minimum = 8}},
+    {<<"8">>, 8} = generate_weak(bender_utils:unique_id(), Schema3, UserCtx, Client),
     ok.
 
 -spec snowflake(config()) ->
@@ -174,8 +174,8 @@ snowflake(C) ->
     ExternalID = bender_utils:unique_id(),
     Schema     = {snowflake, #bender_SnowflakeSchema{}},
     UserCtx    = {bin, <<"breaking nudes">>},
-    InternalID = generate_weak(ExternalID, Schema, UserCtx, Client),
-    InternalID = generate_strict(ExternalID, Schema, UserCtx, Client),
+    {InternalID, IntegerInternalID} = generate_weak(ExternalID, Schema, UserCtx, Client),
+    {InternalID, IntegerInternalID} = generate_strict(ExternalID, Schema, UserCtx, Client),
     ok.
 
 -spec different_schemas(config()) ->
@@ -186,11 +186,11 @@ different_schemas(C) ->
     ExternalID = bender_utils:unique_id(),
     Schema1    = {sequence, #bender_SequenceSchema{sequence_id = bender_utils:unique_id()}},
     UserCtx    = {bin, <<"wo bist do">>},
-    InternalID = generate_weak(ExternalID, Schema1, UserCtx, Client),
+    Generated  = generate_weak(ExternalID, Schema1, UserCtx, Client),
     Schema2    = {snowflake, #bender_SnowflakeSchema{}},
-    InternalID = generate_strict(ExternalID, Schema2, UserCtx, Client),
+    Generated  = generate_strict(ExternalID, Schema2, UserCtx, Client),
     Schema3    = {constant, #bender_ConstantSchema{internal_id = bender_utils:unique_id()}},
-    InternalID = generate_strict(ExternalID, Schema3, UserCtx, Client),
+    Generated  = generate_strict(ExternalID, Schema3, UserCtx, Client),
     ok.
 
 -spec contention(config()) ->
@@ -216,8 +216,8 @@ contention(C) ->
         fun({Schema, UserCtx}) ->
             Client = get_client(C),
             UserCtx1 = {bin, term_to_binary({Schema, UserCtx})},
-            {InternalID, PrevUserCtx} = generate(ExternalID, Schema, UserCtx1, Client),
-            {{ExternalID, InternalID, PrevUserCtx}, {Schema, UserCtx}}
+            {Generated, PrevUserCtx} = generate(ExternalID, Schema, UserCtx1, Client),
+            {{ExternalID, Generated, PrevUserCtx}, {Schema, UserCtx}}
         end,
     Result = genlib_pmap:map(Generate, shuffle(Data)),
     [
@@ -225,8 +225,8 @@ contention(C) ->
         % but record is actually stored in machinegun, winner retries it's request and
         % receives response with user context already stored before, not undefined.
         % So we just repeat this test until ok or maximum number of retries reached
-        {{ExternalID, InternalID, undefined}, UserCtxOfWinner},
-        {{ExternalID, InternalID, {bin, BinaryCtx}}, _OtherUserCtx}
+        {{ExternalID, Generated, undefined}, UserCtxOfWinner},
+        {{ExternalID, Generated, {bin, BinaryCtx}}, _OtherUserCtx}
     ] = lists:ukeysort(1, Result),
     UserCtxOfWinner = binary_to_term(BinaryCtx),
     ok.
@@ -299,22 +299,29 @@ get_client(C) ->
     ?config(client, C).
 
 generate(ExternalID, Schema, UserCtx, Client) ->
-    #bender_GenerationResult{
-        internal_id = InternalID,
-        context     = PrevUserCtx
-    } = bender_client:generate_id(ExternalID, Schema, UserCtx, Client),
-    {InternalID, PrevUserCtx}.
+    case bender_client:generate_id(ExternalID, Schema, UserCtx, Client) of
+        #bender_GenerationResult{
+            internal_id = InternalID,
+            context     = PrevUserCtx,
+            integer_internal_id = undefined
+        } -> {InternalID, PrevUserCtx};
+        #bender_GenerationResult{
+            internal_id = InternalID,
+            context     = PrevUserCtx,
+            integer_internal_id = IntegerInternalID
+        } -> {{InternalID, IntegerInternalID}, PrevUserCtx}
+    end.
 
 generate_strict(ExternalID, Schema, UserCtx, Client) ->
-    {InternalID, UserCtx} = generate(ExternalID, Schema, UserCtx, Client),
-    InternalID.
+    {Generated, UserCtx} = generate(ExternalID, Schema, UserCtx, Client),
+    Generated.
 
 generate_weak(ExternalID, Schema, UserCtx, Client) ->
     case generate(ExternalID, Schema, UserCtx, Client) of
-        {InternalID, undefined} ->
-            InternalID;
-        {InternalID, UserCtx} ->
-            InternalID
+        {Generated, undefined} ->
+            Generated;
+        {Generated, UserCtx} ->
+            Generated
     end.
 
 shuffle(L) ->
