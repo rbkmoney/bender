@@ -65,24 +65,38 @@ generate_id(_ExternalID, Schema, _UserCtx, _WoodyCtx) ->
     {ok, generate_id_result()} | no_return().
 
 bind(ExternalID, Schema, UserCtx, WoodyCtx) ->
-    {ok, InternalID, PrevUserCtx} = bender_generator:bind(ExternalID, Schema, UserCtx, WoodyCtx),
-    Result = #bender_GenerationResult{
-        internal_id = InternalID,
-        context     = PrevUserCtx
-    },
-    {ok, Result}.
+    case bender_generator:bind(ExternalID, Schema, UserCtx, WoodyCtx) of
+        {ok, {InternalID, IntegerInternalID}, PrevUserCtx} ->
+            {ok, #bender_GenerationResult{
+                internal_id = InternalID,
+                context     = PrevUserCtx,
+                integer_internal_id = IntegerInternalID
+            }};
+        {ok, InternalID, PrevUserCtx} ->
+            {ok, #bender_GenerationResult{
+                internal_id = InternalID,
+                context     = PrevUserCtx
+            }}
+    end.
 
 -spec get_internal_id(external_id(), woody_context()) ->
     {ok, get_internal_id_result()} | no_return().
 
 get_internal_id(ExternalID, WoodyCtx) ->
     try
-        {ok, InternalID, UserCtx} = bender_generator:get_internal_id(ExternalID, WoodyCtx),
-        Result = #bender_GetInternalIDResult{
-            internal_id = InternalID,
-            context = UserCtx
-        },
-        {ok, Result}
+        case bender_generator:get_internal_id(ExternalID, WoodyCtx) of
+            {ok, {InternalID, IntegerInternalID}, PrevUserCtx} ->
+                {ok, #bender_GetInternalIDResult{
+                    internal_id = InternalID,
+                    context     = PrevUserCtx,
+                    integer_internal_id = IntegerInternalID
+                }};
+            {ok, InternalID, PrevUserCtx} ->
+                {ok, #bender_GetInternalIDResult{
+                    internal_id = InternalID,
+                    context     = PrevUserCtx
+                }}
+        end
     catch
         throw:{not_found, ExternalID} ->
             throw(#bender_InternalIDNotFound{})
