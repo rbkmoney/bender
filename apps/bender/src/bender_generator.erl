@@ -15,7 +15,8 @@
 -export([process_repair/4]).
 
 -type external_id()  :: binary().
--type internal_id()  :: binary().
+-type internal_id()  :: binary() | {binary(), pos_integer()}.
+
 -type schema()       :: bender:schema().
 -type user_context() :: msgpack_thrift:'Value'() | undefined.
 -type state()        :: #{
