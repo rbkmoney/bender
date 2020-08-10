@@ -57,7 +57,7 @@ get_internal_id(ExternalID, WoodyCtx) ->
     case machinery:get(?NS, ExternalID, get_backend(WoodyCtx)) of
         {ok, Machine} ->
             #{
-                internal_id  := InternalID,
+                internal_id := InternalID,
                 user_context := UserCtx
             } = get_machine_state(Machine),
             {ok, InternalID, UserCtx};
@@ -126,11 +126,13 @@ not_implemented(What) ->
     internal_id().
 
 generate(snowflake, _WoodyCtx) ->
-    bender_utils:unique_id();
+    <<IntegerID:64>> = snowflake:new(),
+    ID = genlib_format:format_int_base(IntegerID, 62),
+    {ID, IntegerID};
 
 generate(#constant{internal_id = InternalID}, _WoodyCtx) ->
     InternalID;
 
 generate(#sequence{id = SequenceID, minimum = Minimum}, WoodyCtx) ->
-    {ok, Value} = bender_sequence:get_next(SequenceID, Minimum, WoodyCtx),
-    integer_to_binary(Value).
+    {ok, IntegerID} = bender_sequence:get_next(SequenceID, Minimum, WoodyCtx),
+    {integer_to_binary(IntegerID), IntegerID}.

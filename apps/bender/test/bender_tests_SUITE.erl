@@ -18,8 +18,8 @@
 -export([contention/1]).
 
 -export([generator_init/1]).
--export([retreive_unknown_id/1]).
--export([retreive_known_id/1]).
+-export([retrieve_unknown_id/1]).
+-export([retrieve_known_id/1]).
 
 -include_lib("bender_proto/include/bender_thrift.hrl").
 
@@ -36,7 +36,7 @@ all() ->
     [
         {group, main},
         {group, contention},
-        {group, retreive_id}
+        {group, retrieve_id}
     ].
 
 -define(parallel_workers, 100).
@@ -62,9 +62,9 @@ groups() ->
         {contention, [{repeat_until_all_ok, 10}], [
             contention
         ]},
-        {retreive_id, [parallel], [
-            retreive_unknown_id,
-            retreive_known_id
+        {retrieve_id, [parallel], [
+            retrieve_unknown_id,
+            retrieve_known_id
         ]}
     ].
 
@@ -139,31 +139,31 @@ constant(C) ->
     ok.
 
 sequence(C) ->
-    Client     = get_client(C),
-    SequenceID = bender_utils:unique_id(),
-    ExternalID = bender_utils:unique_id(),
-    Schema     = {sequence, #bender_SequenceSchema{sequence_id = SequenceID}},
-    UserCtx    = {bin, <<"come to daddy">>},
-    <<"1">>    = generate_weak(ExternalID, Schema, UserCtx, Client),
-    OtherID    = bender_utils:unique_id(),
-    <<"2">>    = generate_weak(OtherID, Schema, UserCtx, Client),
-    <<"1">>    = generate_strict(ExternalID, Schema, UserCtx, Client),
+    Client       = get_client(C),
+    SequenceID   = bender_utils:unique_id(),
+    ExternalID   = bender_utils:unique_id(),
+    Schema       = {sequence, #bender_SequenceSchema{sequence_id = SequenceID}},
+    UserCtx      = {bin, <<"come to daddy">>},
+    {<<"1">>, 1} = generate_weak(ExternalID, Schema, UserCtx, Client),
+    OtherID      = bender_utils:unique_id(),
+    {<<"2">>, 2} = generate_weak(OtherID, Schema, UserCtx, Client),
+    {<<"1">>, 1} = generate_strict(ExternalID, Schema, UserCtx, Client),
     ok.
 
 -spec sequence_minimum(config()) ->
     ok.
 
 sequence_minimum(C) ->
-    Client     = get_client(C),
-    SequenceID = bender_utils:unique_id(),
-    Schema1    = {sequence, #bender_SequenceSchema{sequence_id = SequenceID}},
-    UserCtx    = {bin, <<"benutzerkontext">>},
-    <<"1">>    = generate_weak(bender_utils:unique_id(), Schema1, UserCtx, Client),
-    Schema2    = {sequence, #bender_SequenceSchema{sequence_id = SequenceID, minimum = 10}},
-    <<"10">>   = generate_weak(bender_utils:unique_id(), Schema2, UserCtx, Client),
-    OtherSeqID = bender_utils:unique_id(),
-    Schema3    = {sequence, #bender_SequenceSchema{sequence_id = OtherSeqID, minimum = 42}},
-    <<"42">>   = generate_weak(bender_utils:unique_id(), Schema3, UserCtx, Client),
+    Client       = get_client(C),
+    SequenceID   = bender_utils:unique_id(),
+    Schema1      = {sequence, #bender_SequenceSchema{sequence_id = SequenceID}},
+    UserCtx      = {bin, <<"benutzerkontext">>},
+    {<<"1">>, 1} = generate_weak(bender_utils:unique_id(), Schema1, UserCtx, Client),
+    Schema2      = {sequence, #bender_SequenceSchema{sequence_id = SequenceID, minimum = 4}},
+    {<<"4">>, 4} = generate_weak(bender_utils:unique_id(), Schema2, UserCtx, Client),
+    OtherSeqID   = bender_utils:unique_id(),
+    Schema3      = {sequence, #bender_SequenceSchema{sequence_id = OtherSeqID, minimum = 8}},
+    {<<"8">>, 8} = generate_weak(bender_utils:unique_id(), Schema3, UserCtx, Client),
     ok.
 
 -spec snowflake(config()) ->
@@ -174,8 +174,8 @@ snowflake(C) ->
     ExternalID = bender_utils:unique_id(),
     Schema     = {snowflake, #bender_SnowflakeSchema{}},
     UserCtx    = {bin, <<"breaking nudes">>},
-    InternalID = generate_weak(ExternalID, Schema, UserCtx, Client),
-    InternalID = generate_strict(ExternalID, Schema, UserCtx, Client),
+    {InternalID, IntegerInternalID} = generate_weak(ExternalID, Schema, UserCtx, Client),
+    {InternalID, IntegerInternalID} = generate_strict(ExternalID, Schema, UserCtx, Client),
     ok.
 
 -spec different_schemas(config()) ->
@@ -264,10 +264,10 @@ generator_init(_C) ->
     },
     {ok, _Result} = woody_client:call(Call, Options).
 
--spec retreive_unknown_id(config()) ->
+-spec retrieve_unknown_id(config()) ->
     ok.
 
-retreive_unknown_id(C) ->
+retrieve_unknown_id(C) ->
     Client     = get_client(C),
     ExternalID = bender_utils:unique_id(),
     try
@@ -278,10 +278,10 @@ retreive_unknown_id(C) ->
             ok
     end.
 
--spec retreive_known_id(config()) ->
+-spec retrieve_known_id(config()) ->
     ok.
 
-retreive_known_id(C) ->
+retrieve_known_id(C) ->
     Client     = get_client(C),
     ExternalID = bender_utils:unique_id(),
     InternalID = bender_utils:unique_id(),
@@ -299,11 +299,18 @@ get_client(C) ->
     ?config(client, C).
 
 generate(ExternalID, Schema, UserCtx, Client) ->
-    #bender_GenerationResult{
-        internal_id = InternalID,
-        context     = PrevUserCtx
-    } = bender_client:generate_id(ExternalID, Schema, UserCtx, Client),
-    {InternalID, PrevUserCtx}.
+    case bender_client:generate_id(ExternalID, Schema, UserCtx, Client) of
+        #bender_GenerationResult{
+            internal_id = InternalID,
+            context     = PrevUserCtx,
+            integer_internal_id = undefined
+        } -> {InternalID, PrevUserCtx};
+        #bender_GenerationResult{
+            internal_id = InternalID,
+            context     = PrevUserCtx,
+            integer_internal_id = IntegerInternalID
+        } -> {{InternalID, IntegerInternalID}, PrevUserCtx}
+    end.
 
 generate_strict(ExternalID, Schema, UserCtx, Client) ->
     {InternalID, UserCtx} = generate(ExternalID, Schema, UserCtx, Client),
