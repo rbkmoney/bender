@@ -7,7 +7,7 @@
 
 -type schema()       :: bender_thrift:'GenerationSchema'().
 
--define(retry_stategy, {linear, 1, 1000}).
+-define(retry_stategy, {linear, 5, 1000}).
 
 %%% API
 
@@ -50,7 +50,6 @@ call(Call, Opts, Client, Retry) ->
     end.
 
 do_call(Call, Opts, Client) ->
-    ct:log("Call: ~p, Opts: ~p, Client: ~p", [Call, Opts, Client]),
     case woody_client:call(Call, Opts, Client) of
         {ok, Response} ->
             Response;
