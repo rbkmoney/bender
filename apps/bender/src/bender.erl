@@ -63,7 +63,7 @@ init([]) ->
             transport_opts    => get_transport_opts(),
             shutdown_timeout  => get_shutdown_timeout(),
             event_handler     => EventHandlers,
-            handlers          => [get_handler_spec()],
+            handlers          => get_handler_spec(),
             additional_routes => get_routes(EventHandlers)
         }
     ),
@@ -104,15 +104,22 @@ get_shutdown_timeout() ->
     genlib_app:env(?MODULE, shutdown_timeout, 0).
 
 -spec get_handler_spec() ->
-    woody:http_handler(woody:th_handler()).
+    [woody:http_handler(woody:th_handler())].
 
 get_handler_spec() ->
     Opts = genlib_app:env(?MODULE, service, #{}),
-    Path = maps:get(path, Opts, <<"/v1/bender">>),
-    {Path, {
-        {bender_thrift, 'Bender'},
-        bender_handler
-    }}.
+    BenderPath = maps:get(bender_path, Opts, <<"/v1/bender">>),
+    GeneratorPath = maps:get(generator_path, Opts, <<"/v1/generator">>),
+    [
+        {BenderPath, {
+            {bender_thrift, 'Bender'},
+            bender_handler
+        }},
+        {GeneratorPath, {
+            {bender_thrift, 'Generator'},
+            generator_handler
+        }}
+    ].
 
 -spec get_routes(woody:ev_handlers()) ->
     [woody_server_thrift_http_handler:route(_)].

@@ -3,6 +3,7 @@
 %% API
 
 -export([bind/4]).
+-export([generate/2]).
 -export([get_internal_id/2]).
 
 %% Machinery callbacks
