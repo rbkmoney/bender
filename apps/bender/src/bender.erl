@@ -107,9 +107,11 @@ get_shutdown_timeout() ->
     [woody:http_handler(woody:th_handler())].
 
 get_handler_spec() ->
-    Opts = genlib_app:env(?MODULE, service, #{}),
-    BenderPath = maps:get(bender_path, Opts, <<"/v1/bender">>),
-    GeneratorPath = maps:get(generator_path, Opts, <<"/v1/generator">>),
+    Opts = genlib_app:env(?MODULE, services, #{}),
+    Bender = maps:get(bender, Opts, #{}),
+    Generator = maps:get(generator, Opts, #{}),
+    BenderPath = maps:get(path, Bender, <<"/v1/bender">>),
+    GeneratorPath = maps:get(generator_path, Generator, <<"/v1/generator">>),
     [
         {BenderPath, {
             {bender_thrift, 'Bender'},
