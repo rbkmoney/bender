@@ -38,12 +38,11 @@ all() ->
 groups() ->
     [
         {main, [parallel], [
-            {group, sequence},
+            sequence,
             sequence_minimum,
             constant,
             snowflake
-        ]},
-        {sequence, [parallel], [ sequence || _ <- lists:seq(1, ?parallel_workers) ]}
+        ]}
     ].
 
 -spec init_per_suite(config()) ->
@@ -107,10 +106,16 @@ constant(C) ->
 sequence(C) ->
     Client       = get_client(C),
     SequenceID   = bender_utils:unique_id(),
-    Schema       = {sequence, #bender_SequenceSchema{sequence_id = SequenceID}},
-    {<<"1">>, 1} = generate(Schema, Client),
-    {<<"2">>, 2} = generate(Schema, Client),
-    {<<"3">>, 3} = generate(Schema, Client),
+    ExpectedIDs  = lists:seq(1, ?parallel_workers),
+    GeneratedIDs = genlib_pmap:map(
+        fun(_) ->
+            Schema         = {sequence, #bender_SequenceSchema{sequence_id = SequenceID}},
+            {_, IntegerID} = generate(Schema, Client),
+            IntegerID
+        end,
+        ExpectedIDs
+    ),
+    ExpectedIDs = lists:sort(GeneratedIDs),
     ok.
 
 -spec sequence_minimum(config()) ->
