@@ -38,14 +38,12 @@ all() ->
 groups() ->
     [
         {main, [parallel], [
-            {group, constant},
             {group, sequence},
             sequence_minimum,
-            {group, snowflake}
+            constant,
+            snowflake
         ]},
-        {constant, [parallel], [ constant || _ <- lists:seq(1, ?parallel_workers) ]},
-        {sequence, [parallel], [ sequence || _ <- lists:seq(1, ?parallel_workers) ]},
-        {snowflake, [parallel], [ snowflake || _ <- lists:seq(1, ?parallel_workers) ]}
+        {sequence, [parallel], [ sequence || _ <- lists:seq(1, ?parallel_workers) ]}
     ].
 
 -spec init_per_suite(config()) ->
@@ -55,15 +53,6 @@ init_per_suite(C) ->
     Apps = genlib_app:start_application_with(scoper, [
         {storage, scoper_storage_logger}
     ]) ++ genlib_app:start_application_with(bender, [
-        {generator, #{
-            path          => <<"/v1/stateproc/bender_generator">>,
-            schema        => machinery_mg_schema_generic,
-            url           => <<"http://machinegun:8022/v1/automaton">>,
-            event_handler => scoper_woody_event_handler,
-            transport_opts => #{
-                max_connections => 1000
-            }
-        }},
         {sequence, #{
             path          => <<"/v1/stateproc/bender_sequence">>,
             schema        => machinery_mg_schema_generic,
