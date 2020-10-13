@@ -67,37 +67,37 @@ groups() ->
 
 -spec init_per_suite(config()) -> config().
 init_per_suite(C) ->
-    Apps =
-        genlib_app:start_application_with(scoper, [
-            {storage, scoper_storage_logger}
-        ]) ++
-            genlib_app:start_application_with(bender, [
-                {generator, #{
-                    path => <<"/v1/stateproc/bender_generator">>,
-                    schema => machinery_mg_schema_generic,
-                    url => <<"http://machinegun:8022/v1/automaton">>,
-                    event_handler => scoper_woody_event_handler,
-                    transport_opts => #{
-                        max_connections => 1000
-                    }
-                }},
-                {sequence, #{
-                    path => <<"/v1/stateproc/bender_sequence">>,
-                    schema => machinery_mg_schema_generic,
-                    url => <<"http://machinegun:8022/v1/automaton">>,
-                    event_handler => scoper_woody_event_handler,
-                    transport_opts => #{
-                        max_connections => 1000
-                    }
-                }},
-                {protocol_opts, #{
-                    timeout => 60000
-                }},
-                {transport_opts, #{
-                    max_connections => 10000,
-                    num_acceptors => 100
-                }}
-            ]),
+    ScoperApps = genlib_app:start_application_with(scoper, [
+        {storage, scoper_storage_logger}
+    ]),
+    BenderApps = genlib_app:start_application_with(bender, [
+        {generator, #{
+            path => <<"/v1/stateproc/bender_generator">>,
+            schema => machinery_mg_schema_generic,
+            url => <<"http://machinegun:8022/v1/automaton">>,
+            event_handler => scoper_woody_event_handler,
+            transport_opts => #{
+                max_connections => 1000
+            }
+        }},
+        {sequence, #{
+            path => <<"/v1/stateproc/bender_sequence">>,
+            schema => machinery_mg_schema_generic,
+            url => <<"http://machinegun:8022/v1/automaton">>,
+            event_handler => scoper_woody_event_handler,
+            transport_opts => #{
+                max_connections => 1000
+            }
+        }},
+        {protocol_opts, #{
+            timeout => 60000
+        }},
+        {transport_opts, #{
+            max_connections => 10000,
+            num_acceptors => 100
+        }}
+    ]),
+    Apps = ScoperApps ++ BenderApps,
     [{suite_apps, Apps} | C].
 
 -spec end_per_suite(config()) -> ok.
@@ -178,19 +178,19 @@ different_schemas(C) ->
 contention(C) ->
     ExternalID = bender_utils:unique_id(),
     SequenceID = bender_utils:unique_id(),
-    Data =
-        [
-            {{snowflake, #bender_SnowflakeSchema{}}, bender_utils:unique_id()}
-            || _ <- lists:seq(1, ?contention_test_workers)
-        ] ++
-            [
-                {{constant, #bender_ConstantSchema{internal_id = bender_utils:unique_id()}}, bender_utils:unique_id()}
-                || _ <- lists:seq(1, ?contention_test_workers)
-            ] ++
-            [
-                {{sequence, #bender_SequenceSchema{sequence_id = SequenceID}}, bender_utils:unique_id()}
-                || _ <- lists:seq(1, ?contention_test_workers)
-            ],
+    SnowflakeData = [
+        {{snowflake, #bender_SnowflakeSchema{}}, bender_utils:unique_id()}
+        || _ <- lists:seq(1, ?contention_test_workers)
+    ],
+    ConstantData = [
+        {{constant, #bender_ConstantSchema{internal_id = bender_utils:unique_id()}}, bender_utils:unique_id()}
+        || _ <- lists:seq(1, ?contention_test_workers)
+    ],
+    SequenceData = [
+        {{sequence, #bender_SequenceSchema{sequence_id = SequenceID}}, bender_utils:unique_id()}
+        || _ <- lists:seq(1, ?contention_test_workers)
+    ],
+    Data = SnowflakeData ++ ConstantData ++ SequenceData,
     Generate = fun({Schema, UserCtx}) ->
         Client = get_client(C),
         UserCtx1 = {bin, term_to_binary({Schema, UserCtx})},

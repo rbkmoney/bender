@@ -58,11 +58,8 @@ init([]) ->
             additional_routes => get_routes(EventHandlers)
         }
     ),
-    {ok,
-        {
-            #{strategy => one_for_all, intensity => 6, period => 30},
-            [ChildSpec]
-        }}.
+    Flags = #{strategy => one_for_all, intensity => 6, period => 30},
+    {ok, {Flags, [ChildSpec]}}.
 
 -spec get_ip_address() -> inet:ip_address().
 get_ip_address() ->
