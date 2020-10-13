@@ -5,29 +5,23 @@
 
 -type client() :: woody_context:ctx().
 
--type schema()       :: bender_thrift:'GenerationSchema'().
+-type schema() :: bender_thrift:'GenerationSchema'().
 
 -define(retry_stategy, {linear, 5, 1000}).
 
 %%% API
 
--spec new() ->
-    client().
-
+-spec new() -> client().
 new() ->
     woody_context:new().
 
--spec generate_id(schema(), client()) ->
-    woody:result() | no_return().
-
+-spec generate_id(schema(), client()) -> woody:result() | no_return().
 generate_id(Schema, Client) ->
     call('GenerateID', [Schema], Client).
 
 %%% Internal functions
 
--spec call(atom(), list(), client()) ->
-    woody:result() | no_return().
-
+-spec call(atom(), list(), client()) -> woody:result() | no_return().
 call(Function, Args, Client) ->
     Call = {{bender_thrift, 'Generator'}, Function, Args},
     Opts = #{
@@ -43,8 +37,9 @@ call(Call, Opts, Client, Retry) ->
     try
         do_call(Call, Opts, Client)
     catch
-        error:{woody_error, {_Source, Class, _Details}} = Error
-        when Class =:= resource_unavailable orelse Class =:= result_unknown ->
+        error:{woody_error, {_Source, Class, _Details}} = Error when
+            Class =:= resource_unavailable orelse Class =:= result_unknown
+        ->
             NextRetry = next_retry(Retry, Error),
             call(Call, Opts, Client, NextRetry)
     end.
