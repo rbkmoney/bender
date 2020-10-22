@@ -121,7 +121,7 @@ get_routes(EventHandlers) ->
         }}
     ],
     Check = enable_health_logging(genlib_app:env(?MODULE, health_check, #{})),
-    [erl_health_handle:get_route(Check) | machinery_mg_backend:get_routes(Handlers, RouteOpts)].
+    [erl_health_handle:get_route(Check), get_prometheus_route() | machinery_mg_backend:get_routes(Handlers, RouteOpts)].
 
 -spec enable_health_logging(erl_health:check()) -> erl_health:check().
 enable_health_logging(Check) ->
@@ -130,3 +130,7 @@ enable_health_logging(Check) ->
         fun(_, Runner) -> #{runner => Runner, event_handler => EvHandler} end,
         Check
     ).
+
+-spec get_prometheus_route() -> {iodata(), module(), _Opts :: any()}.
+get_prometheus_route() ->
+    {"/metrics/[:registry]", prometheus_cowboy2_handler, []}.
