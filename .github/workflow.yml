@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+    paths-ignore:
+      - 'README.md'
+      - 'LICENSE'
+  pull_request:
+    branches: [ master ]
+    paths-ignore:
+      - 'README.md'
+      - 'LICENSE'
+
+jobs:
+  erlang_23:
+    runs-on: ubuntu-latest
+
+    container:
+      image: erlang:23
+
+    steps:
+    - uses: actions/checkout@v2
