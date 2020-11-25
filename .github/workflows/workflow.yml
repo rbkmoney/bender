@@ -23,6 +23,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        repository: 'https://github.com/rbkmoney/bender.git'
+        # token: some_token
+        # ssh-key: some_key
     - name: Load submodules
       run: make submodules
     # - name: Compile
