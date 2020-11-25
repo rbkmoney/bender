@@ -24,11 +24,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-        # repository: 'rbkmoney/bender'
         submodules: true
-        # token: some_token
-        # ssh-key: some_key
-    # - name: Load submodules
-    #   run: make submodules
-    # - name: Compile
-    #   run: make wc_compile
+    - name: Compile
+      run: make wc_compile
