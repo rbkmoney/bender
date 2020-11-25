@@ -18,8 +18,10 @@ jobs:
   test_build:
     runs-on: ubuntu-latest
 
-    container:
-      image: dr2.rbkmoney.com/rbkmoney/build-erlang:491bc06c745a07c6fe9e8b5dbbe958e8e0b82c4c
+    # container:
+    #   image: dr2.rbkmoney.com/rbkmoney/build-erlang:491bc06c745a07c6fe9e8b5dbbe958e8e0b82c4c
 
     steps:
     - uses: actions/checkout@v2
+    - name: Compile
+      run: make wc_compile
