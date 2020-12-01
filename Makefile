@@ -60,7 +60,7 @@ format:
 dialyze:
 	$(REBAR) dialyzer
 
-check: xref lint dialyze
+check: xref lint check_format dialyze
 
 start: submodules
 	$(REBAR) run
@@ -81,3 +81,8 @@ distclean:
 # CALL_W_CONTAINER
 test: submodules
 	$(REBAR) ct
+
+actions_shell:
+	cd github_actions
+	docker-compose up -d
+	docker-compose exec $(SERVICE_NAME) sh
