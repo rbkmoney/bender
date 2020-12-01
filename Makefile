@@ -83,6 +83,4 @@ test: submodules
 	$(REBAR) ct
 
 actions_shell:
-	cd github_actions
-	docker-compose up -d
-	docker-compose exec $(SERVICE_NAME) sh
+	cd github_actions && docker-compose up -d && docker-compose exec $(SERVICE_NAME) sh
