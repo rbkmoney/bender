@@ -8,8 +8,8 @@ erl_crash.dump
 *.sublime-workspace
 .edts
 .DS_Store
-Dockerfile
-docker-compose.yml
+/Dockerfile
+/docker-compose.yml
 /.idea/
 *.beam
 rebar3.crashdump
