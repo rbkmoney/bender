@@ -83,4 +83,4 @@ test: submodules
 	$(REBAR) ct
 
 actions_shell:
-	docker-compose -f github_actions/docker-compose.yml up -d && docker-compose -f github_actions/docker-compose.yml exec $(SERVICE_NAME) sh
+	docker-compose -f github_actions/docker-compose.yml up -d && docker-compose -f github_actions/docker-compose.yml exec -T $(SERVICE_NAME) sh
