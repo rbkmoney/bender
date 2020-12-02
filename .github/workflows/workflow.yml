@@ -23,8 +23,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-      # with:
-      #   submodules: true
+      with:
+        submodules: true
     # - name: Compile
     #   run: make wc_compile
     - name: Build
