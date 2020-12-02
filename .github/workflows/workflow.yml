@@ -27,9 +27,11 @@ jobs:
         submodules: true
     # - name: Compile
     #   run: make wc_compile
-    - name: Build
-      run: make actions_shell
-      # env:
-      #   COMPOSE_INTERACTIVE_NO_CLI: 1
+    #   env:
+    #     COMPOSE_INTERACTIVE_NO_CLI: 1
+    - name: Setup
+      run: make actions_setup
+    - name: Compile
+      run: make actions_compile
     - name: Test
-      run: rebar3 ct
+      run: make actions_test
