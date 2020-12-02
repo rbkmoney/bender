@@ -93,3 +93,6 @@ actions_compile:
 
 actions_test:
 	docker-compose -f github_actions/docker-compose.yml exec -T $(SERVICE_NAME) sh -c 'rebar3 ct'
+
+actions_check:
+	docker-compose -f github_actions/docker-compose.yml exec -T $(SERVICE_NAME) sh -c 'make check'

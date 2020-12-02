@@ -33,5 +33,7 @@ jobs:
       run: make actions_setup
     - name: Compile
       run: make actions_compile
+    - name: Check
+      run: make actions_check
     - name: Test
       run: make actions_test
