@@ -84,3 +84,12 @@ test: submodules
 
 actions_shell:
 	docker-compose -f github_actions/docker-compose.yml up -d && docker-compose -f github_actions/docker-compose.yml exec -T $(SERVICE_NAME) sh
+
+actions_setup:
+	docker-compose -f github_actions/docker-compose.yml up -d
+
+actions_compile:
+	docker-compose -f github_actions/docker-compose.yml exec -T $(SERVICE_NAME) -c 'rebar3 compile'
+
+actions_test:
+	docker-compose -f github_actions/docker-compose.yml exec -T $(SERVICE_NAME) -c 'rebar3 ct'
