@@ -32,4 +32,4 @@ jobs:
       env:
         COMPOSE_INTERACTIVE_NO_CLI: 1
     - name: Test
-      run: make test
+      run: rebar3 ct
