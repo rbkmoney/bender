@@ -89,7 +89,7 @@ actions_setup:
 	docker-compose -f github_actions/docker-compose.yml up -d
 
 actions_compile:
-	docker-compose -f github_actions/docker-compose.yml exec -T $(SERVICE_NAME) -c 'rebar3 compile'
+	docker-compose -f github_actions/docker-compose.yml exec -T $(SERVICE_NAME) sh -c 'rebar3 compile'
 
 actions_test:
-	docker-compose -f github_actions/docker-compose.yml exec -T $(SERVICE_NAME) -c 'rebar3 ct'
+	docker-compose -f github_actions/docker-compose.yml exec -T $(SERVICE_NAME) sh -c 'rebar3 ct'
