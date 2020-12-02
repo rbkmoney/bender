@@ -20,7 +20,7 @@ BASE_IMAGE_TAG := 02a14b0cf68de5552e03a4f66f771411ff7964f8
 BUILD_IMAGE_NAME := build-erlang
 BUILD_IMAGE_TAG := 491bc06c745a07c6fe9e8b5dbbe958e8e0b82c4c
 
-CALL_ANYWHERE := all submodules rebar-update compile xref lint dialyze start devrel \
+CALL_ANYWHERE := all submodules rebar-update compile xref lint dialyze \
 				release clean distclean check format check_format
 
 CALL_W_CONTAINER := $(CALL_ANYWHERE) test
@@ -61,12 +61,6 @@ dialyze:
 	$(REBAR) dialyzer
 
 check: xref lint dialyze
-
-start: submodules
-	$(REBAR) run
-
-devrel: submodules
-	$(REBAR) release
 
 release: distclean
 	$(REBAR) as prod release
