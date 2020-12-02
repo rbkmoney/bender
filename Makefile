@@ -82,9 +82,6 @@ distclean:
 test: submodules
 	$(REBAR) ct
 
-actions_shell:
-	docker-compose -f github_actions/docker-compose.yml up -d && docker-compose -f github_actions/docker-compose.yml exec -T $(SERVICE_NAME) sh
-
 actions_setup:
 	docker-compose -f github_actions/docker-compose.yml up -d
 
