@@ -1,0 +1,26 @@
+version: '2.4'
+
+services:
+  bender:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ..:/_bender
+    working_dir: /_bender
+    command: /sbin/init
+    depends_on:
+      machinegun:
+        condition: service_healthy
+
+  machinegun:
+    image: rbkmoney/machinegun:93624bcff131d76288f51dceb6102975a1455cbc
+    command: /opt/machinegun/bin/machinegun foreground
+    volumes:
+      - ../test/machinegun/config.yaml:/opt/machinegun/etc/config.yaml
+      - ../test/machinegun/cookie:/opt/machinegun/etc/cookie
+    healthcheck:
+      test: "curl http://localhost:8022/"
+      interval: 5s
+      timeout: 1s
+      retries: 12

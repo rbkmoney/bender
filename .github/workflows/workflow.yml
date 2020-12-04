@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  # push should probably trigger a separate workflow
+  #
+  # push:
+  #   branches: [ master ]
+  #   paths-ignore:
+  #     - 'README.md'
+  #     - 'LICENSE'
+  pull_request:
+    branches: [ master ]
+    paths-ignore:
+      - 'README.md'
+      - 'LICENSE'
+
+jobs:
+  test_build:
+    runs-on: ubuntu-latest
+
+    # container:
+    #   image: dr2.rbkmoney.com/rbkmoney/build-erlang:491bc06c745a07c6fe9e8b5dbbe958e8e0b82c4c
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    # - name: Compile
+    #   run: make wc_compile
+    #   env:
+    #     COMPOSE_INTERACTIVE_NO_CLI: 1
+    - name: Setup
+      run: make actions_setup
+    - name: Compile
+      run: make actions_compile
+    - name: Check
+      run: make actions_check
+    - name: Test
+      run: make actions_test
