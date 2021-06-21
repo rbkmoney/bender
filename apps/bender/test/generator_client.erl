@@ -7,7 +7,7 @@
 
 -type schema() :: bender_thrift:'GenerationSchema'().
 
--define(retry_stategy, {linear, 5, 1000}).
+-define(RETRY_STATEGY, {linear, 5, 1000}).
 
 %%% API
 
@@ -31,7 +31,7 @@ call(Function, Args, Client) ->
             max_connections => 10000
         }
     },
-    call(Call, Opts, Client, ?retry_stategy).
+    call(Call, Opts, Client, ?RETRY_STATEGY).
 
 call(Call, Opts, Client, Retry) ->
     try

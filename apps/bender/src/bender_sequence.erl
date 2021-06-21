@@ -41,7 +41,7 @@
 
 -define(NS, bender_sequence).
 
--define(default_initial_value, 1).
+-define(DEFAULT_INITIAL_VALUE, 1).
 
 %%% API
 
@@ -56,11 +56,11 @@ get_current(SequenceID, WoodyCtx) ->
 
 -spec get_next(id(), woody_context()) -> {ok, value()}.
 get_next(SequenceID, WoodyCtx) ->
-    get_next(SequenceID, ?default_initial_value, WoodyCtx).
+    get_next(SequenceID, ?DEFAULT_INITIAL_VALUE, WoodyCtx).
 
 -spec get_next(id(), minimum(), woody_context()) -> {ok, value()}.
 get_next(SequenceID, undefined, WoodyCtx) ->
-    get_next(SequenceID, ?default_initial_value, WoodyCtx);
+    get_next(SequenceID, ?DEFAULT_INITIAL_VALUE, WoodyCtx);
 get_next(SequenceID, Minimum, WoodyCtx) ->
     Args = #{initial_value => Minimum},
     case start(SequenceID, Args, WoodyCtx) of
@@ -76,7 +76,7 @@ get_next(SequenceID, Minimum, WoodyCtx) ->
 init(Args, _Machine, _HandlerArgs, _HandlerOpts) ->
     #{
         aux_state => #{
-            value => maps:get(initial_value, Args, ?default_initial_value)
+            value => maps:get(initial_value, Args, ?DEFAULT_INITIAL_VALUE)
         }
     }.
 
