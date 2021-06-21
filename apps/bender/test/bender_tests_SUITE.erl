@@ -27,7 +27,7 @@
 -type group_name() :: atom().
 -type test_case_name() :: atom().
 
--define(config(Key, C), (element(2, lists:keyfind(Key, 1, C)))).
+-define(CONFIG(Key, C), (element(2, lists:keyfind(Key, 1, C)))).
 
 -spec all() -> [atom()].
 all() ->
@@ -37,8 +37,8 @@ all() ->
         {group, retrieve_id}
     ].
 
--define(parallel_workers, 100).
--define(contention_test_workers, 100).
+-define(PARALLEL_WORKERS, 100).
+-define(CONTENTION_TEST_WORKERS, 100).
 
 -spec groups() -> [{group_name(), list(), [test_case_name()]}].
 groups() ->
@@ -51,11 +51,11 @@ groups() ->
             {group, different_schemas},
             {group, generator_init}
         ]},
-        {constant, [parallel], [constant || _ <- lists:seq(1, ?parallel_workers)]},
-        {sequence, [parallel], [sequence || _ <- lists:seq(1, ?parallel_workers)]},
-        {snowflake, [parallel], [snowflake || _ <- lists:seq(1, ?parallel_workers)]},
-        {different_schemas, [parallel], [different_schemas || _ <- lists:seq(1, ?parallel_workers)]},
-        {generator_init, [parallel], [generator_init || _ <- lists:seq(1, ?parallel_workers)]},
+        {constant, [parallel], [constant || _ <- lists:seq(1, ?PARALLEL_WORKERS)]},
+        {sequence, [parallel], [sequence || _ <- lists:seq(1, ?PARALLEL_WORKERS)]},
+        {snowflake, [parallel], [snowflake || _ <- lists:seq(1, ?PARALLEL_WORKERS)]},
+        {different_schemas, [parallel], [different_schemas || _ <- lists:seq(1, ?PARALLEL_WORKERS)]},
+        {generator_init, [parallel], [generator_init || _ <- lists:seq(1, ?PARALLEL_WORKERS)]},
         {contention, [{repeat_until_all_ok, 10}], [
             contention
         ]},
@@ -102,7 +102,7 @@ init_per_suite(C) ->
 
 -spec end_per_suite(config()) -> ok.
 end_per_suite(C) ->
-    genlib_app:stop_unload_applications(?config(suite_apps, C)).
+    genlib_app:stop_unload_applications(?CONFIG(suite_apps, C)).
 
 -spec init_per_testcase(atom(), config()) -> config().
 init_per_testcase(_Name, C) ->
@@ -180,15 +180,15 @@ contention(C) ->
     SequenceID = bender_utils:unique_id(),
     SnowflakeData = [
         {{snowflake, #bender_SnowflakeSchema{}}, bender_utils:unique_id()}
-        || _ <- lists:seq(1, ?contention_test_workers)
+        || _ <- lists:seq(1, ?CONTENTION_TEST_WORKERS)
     ],
     ConstantData = [
         {{constant, #bender_ConstantSchema{internal_id = bender_utils:unique_id()}}, bender_utils:unique_id()}
-        || _ <- lists:seq(1, ?contention_test_workers)
+        || _ <- lists:seq(1, ?CONTENTION_TEST_WORKERS)
     ],
     SequenceData = [
         {{sequence, #bender_SequenceSchema{sequence_id = SequenceID}}, bender_utils:unique_id()}
-        || _ <- lists:seq(1, ?contention_test_workers)
+        || _ <- lists:seq(1, ?CONTENTION_TEST_WORKERS)
     ],
     Data = SnowflakeData ++ ConstantData ++ SequenceData,
     Generate = fun({Schema, UserCtx}) ->
@@ -268,7 +268,7 @@ retrieve_known_id(C) ->
 %%%
 
 get_client(C) ->
-    ?config(client, C).
+    ?CONFIG(client, C).
 
 generate(ExternalID, Schema, UserCtx, Client) ->
     case bender_client:generate_id(ExternalID, Schema, UserCtx, Client) of

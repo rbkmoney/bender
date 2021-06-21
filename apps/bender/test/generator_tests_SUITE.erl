@@ -20,7 +20,7 @@
 -type group_name() :: atom().
 -type test_case_name() :: atom().
 
--define(config(Key, C), (element(2, lists:keyfind(Key, 1, C)))).
+-define(CONFIG(Key, C), (element(2, lists:keyfind(Key, 1, C)))).
 
 -spec all() -> [atom()].
 all() ->
@@ -28,7 +28,7 @@ all() ->
         {group, main}
     ].
 
--define(parallel_workers, 100).
+-define(PARALLEL_WORKERS, 100).
 
 -spec groups() -> [{group_name(), list(), [test_case_name()]}].
 groups() ->
@@ -69,7 +69,7 @@ init_per_suite(C) ->
 
 -spec end_per_suite(config()) -> ok.
 end_per_suite(C) ->
-    genlib_app:stop_unload_applications(?config(suite_apps, C)).
+    genlib_app:stop_unload_applications(?CONFIG(suite_apps, C)).
 
 -spec init_per_testcase(atom(), config()) -> config().
 init_per_testcase(_Name, C) ->
@@ -92,7 +92,7 @@ constant(C) ->
 sequence(C) ->
     Client = get_client(C),
     SequenceID = bender_utils:unique_id(),
-    ExpectedIDs = lists:seq(1, ?parallel_workers),
+    ExpectedIDs = lists:seq(1, ?PARALLEL_WORKERS),
     GeneratedIDs = genlib_pmap:map(
         fun(_) ->
             Schema = {sequence, #bender_SequenceSchema{sequence_id = SequenceID}},
@@ -127,7 +127,7 @@ snowflake(C) ->
 %%%
 
 get_client(C) ->
-    ?config(client, C).
+    ?CONFIG(client, C).
 
 generate(Schema, Client) ->
     case generator_client:generate_id(Schema, Client) of
