@@ -180,15 +180,15 @@ contention(C) ->
     SequenceID = bender_utils:unique_id(),
     SnowflakeData = [
         {{snowflake, #bender_SnowflakeSchema{}}, bender_utils:unique_id()}
-        || _ <- lists:seq(1, ?CONTENTION_TEST_WORKERS)
+     || _ <- lists:seq(1, ?CONTENTION_TEST_WORKERS)
     ],
     ConstantData = [
         {{constant, #bender_ConstantSchema{internal_id = bender_utils:unique_id()}}, bender_utils:unique_id()}
-        || _ <- lists:seq(1, ?CONTENTION_TEST_WORKERS)
+     || _ <- lists:seq(1, ?CONTENTION_TEST_WORKERS)
     ],
     SequenceData = [
         {{sequence, #bender_SequenceSchema{sequence_id = SequenceID}}, bender_utils:unique_id()}
-        || _ <- lists:seq(1, ?CONTENTION_TEST_WORKERS)
+     || _ <- lists:seq(1, ?CONTENTION_TEST_WORKERS)
     ],
     Data = SnowflakeData ++ ConstantData ++ SequenceData,
     Generate = fun({Schema, UserCtx}) ->
