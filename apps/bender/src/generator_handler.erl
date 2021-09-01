@@ -23,7 +23,7 @@ handle_function(Func, Args, WoodyCtx, Opts) ->
     ).
 
 -spec handle_function_(woody:func(), woody:args(), woody_context(), woody:options()) -> {ok, woody:result()}.
-handle_function_('GenerateID', [Schema], WoodyCtx, _Opts) ->
+handle_function_('GenerateID', {Schema}, WoodyCtx, _Opts) ->
     generate_id(Schema, WoodyCtx).
 
 -spec generate_id(bender_thrift:'GenerationSchema'(), woody_context()) -> {ok, generate_id_result()} | no_return().
