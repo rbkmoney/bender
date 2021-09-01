@@ -26,12 +26,12 @@ handle_function(Func, Args, WoodyCtx, Opts) ->
     ).
 
 -spec handle_function_(woody:func(), woody:args(), woody_context(), woody:options()) -> {ok, woody:result()}.
-handle_function_('GenerateID', [ExternalID, Schema, UserCtx], WoodyCtx, _Opts) ->
+handle_function_('GenerateID', {ExternalID, Schema, UserCtx}, WoodyCtx, _Opts) ->
     scoper:add_meta(#{
         external_id => ExternalID
     }),
     generate_id(ExternalID, Schema, UserCtx, WoodyCtx);
-handle_function_('GetInternalID', [ExternalID], WoodyCtx, _Opts) ->
+handle_function_('GetInternalID', {ExternalID}, WoodyCtx, _Opts) ->
     scoper:add_meta(#{
         external_id => ExternalID
     }),

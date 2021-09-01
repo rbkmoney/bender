@@ -17,11 +17,11 @@ new() ->
 
 -spec generate_id(schema(), client()) -> woody:result() | no_return().
 generate_id(Schema, Client) ->
-    call('GenerateID', [Schema], Client).
+    call('GenerateID', {Schema}, Client).
 
 %%% Internal functions
 
--spec call(atom(), list(), client()) -> woody:result() | no_return().
+-spec call(atom(), tuple(), client()) -> woody:result() | no_return().
 call(Function, Args, Client) ->
     Call = {{bender_thrift, 'Generator'}, Function, Args},
     Opts = #{

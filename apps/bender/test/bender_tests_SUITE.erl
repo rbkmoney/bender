@@ -229,7 +229,7 @@ generator_init(_C) ->
             timer = undefined
         }
     },
-    Call = {{mg_proto_state_processing_thrift, 'Processor'}, 'ProcessSignal', [Request]},
+    Call = {{mg_proto_state_processing_thrift, 'Processor'}, 'ProcessSignal', {Request}},
     Options = #{
         url => <<"http://localhost:8022/v1/stateproc/bender_generator">>,
         event_handler => scoper_woody_event_handler,

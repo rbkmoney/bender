@@ -20,15 +20,15 @@ new() ->
 
 -spec generate_id(external_id(), schema(), user_context(), client()) -> woody:result() | no_return().
 generate_id(ExternalID, Schema, UserCtx, Client) ->
-    call('GenerateID', [ExternalID, Schema, UserCtx], Client).
+    call('GenerateID', {ExternalID, Schema, UserCtx}, Client).
 
 -spec get_internal_id(external_id(), client()) -> woody:result() | no_return().
 get_internal_id(ExternalID, Client) ->
-    call('GetInternalID', [ExternalID], Client).
+    call('GetInternalID', {ExternalID}, Client).
 
 %%% Internal functions
 
--spec call(atom(), list(), client()) -> woody:result() | no_return().
+-spec call(atom(), tuple(), client()) -> woody:result() | no_return().
 call(Function, Args, Client) ->
     Call = {{bender_thrift, 'Bender'}, Function, Args},
     Opts = #{
