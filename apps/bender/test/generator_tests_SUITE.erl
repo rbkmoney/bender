@@ -45,9 +45,9 @@ groups() ->
 init_per_suite(C) ->
     Apps =
         genlib_app:start_application(how_are_you) ++
-        genlib_app:start_application_with(scoper, [
-            {storage, scoper_storage_logger}
-        ]) ++
+            genlib_app:start_application_with(scoper, [
+                {storage, scoper_storage_logger}
+            ]) ++
             genlib_app:start_application_with(bender, [
                 {sequence, #{
                     path => <<"/v1/stateproc/bender_sequence">>,
