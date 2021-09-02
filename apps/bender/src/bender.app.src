@@ -8,7 +8,6 @@
         snowflake,
         bender_proto,
         woody,
-        how_are_you,  % must be after ranch and before any woody usage
         scoper,  % should be before any scoper event handler usage
         machinery,
         erl_health,

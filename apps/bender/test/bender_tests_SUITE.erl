@@ -67,6 +67,7 @@ groups() ->
 
 -spec init_per_suite(config()) -> config().
 init_per_suite(C) ->
+    HayApps = genlib_app:start_application(how_are_you),
     ScoperApps = genlib_app:start_application_with(scoper, [
         {storage, scoper_storage_logger}
     ]),
@@ -97,7 +98,7 @@ init_per_suite(C) ->
             num_acceptors => 100
         }}
     ]),
-    Apps = ScoperApps ++ BenderApps,
+    Apps = HayApps ++ ScoperApps ++ BenderApps,
     [{suite_apps, Apps} | C].
 
 -spec end_per_suite(config()) -> ok.
